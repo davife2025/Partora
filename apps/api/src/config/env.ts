@@ -1,0 +1,40 @@
+import "dotenv/config";
+
+function required(key: string): string {
+  const val = process.env[key];
+  if (!val) throw new Error(`Missing required env var: ${key}`);
+  return val;
+}
+
+function optional(key: string, fallback: string): string {
+  return process.env[key] ?? fallback;
+}
+
+export const config = {
+  port: parseInt(optional("PORT", "4000"), 10),
+  nodeEnv: optional("NODE_ENV", "development"),
+
+  supabase: {
+    url: required("SUPABASE_URL"),
+    anonKey: required("SUPABASE_ANON_KEY"),
+    serviceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY"),
+  },
+
+  elevenlabs: {
+    apiKey: required("ELEVENLABS_API_KEY"),
+  },
+
+  huggingface: {
+    apiKey: required("HUGGINGFACE_API_KEY"),
+    modelId: optional("HUGGINGFACE_MODEL_ID", "moonshotai/Kimi-K2.6"),
+  },
+
+  audd: {
+    token: required("AUDD_API_TOKEN"),
+  },
+
+  api: {
+    secret: required("API_SECRET"),
+    corsOrigin: optional("CORS_ORIGIN", "http://localhost:3000"),
+  },
+} as const;

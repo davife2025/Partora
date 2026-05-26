@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd ../.. && npx turbo run build --filter=@partora/web",
+  "outputDirectory": "apps/web/.next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@partora-api-url",
+    "NEXT_PUBLIC_SUPABASE_URL": "@partora-supabase-url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@partora-supabase-anon-key"
+  }
+}

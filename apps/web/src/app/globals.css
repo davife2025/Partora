@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@layer base {
+  :root {
+    --soprano: #7F77DD;
+    --alto:    #2DA882;
+    --tenor:   #D4820A;
+    --bass:    #185FA5;
+    --bg:      #0D0D14;
+    --bg-2:    #13131E;
+    --bg-3:    #1A1A28;
+    --border:  #2A2A40;
+    --muted:   #6B6B8A;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    @apply bg-background text-white antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  ::selection {
+    background: rgba(127, 119, 221, 0.3);
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 99px;
+  }
+}
+
+@layer components {
+  /* Glassmorphism card base */
+  .glass {
+    @apply bg-background-secondary border border-border rounded-2xl;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-hover {
+    @apply glass transition-all duration-200;
+  }
+  .glass-hover:hover {
+    @apply border-border;
+    background: rgba(26, 26, 40, 0.9);
+  }
+
+  /* Voice part colour utilities */
+  .voice-soprano { color: var(--soprano); }
+  .voice-alto    { color: var(--alto); }
+  .voice-tenor   { color: var(--tenor); }
+  .voice-bass    { color: var(--bass); }
+
+  .bg-voice-soprano { background: rgba(127, 119, 221, 0.15); border-color: rgba(127, 119, 221, 0.3); }
+  .bg-voice-alto    { background: rgba(45, 168, 130, 0.15);  border-color: rgba(45, 168, 130, 0.3); }
+  .bg-voice-tenor   { background: rgba(212, 130, 10, 0.15);  border-color: rgba(212, 130, 10, 0.3); }
+  .bg-voice-bass    { background: rgba(24, 95, 165, 0.15);   border-color: rgba(24, 95, 165, 0.3); }
+
+  /* Waveform bars */
+  .waveform-bar {
+    @apply w-1 rounded-full;
+    animation: waveform 1.2s ease-in-out infinite;
+  }
+  .waveform-bar:nth-child(2) { animation-delay: 0.1s; }
+  .waveform-bar:nth-child(3) { animation-delay: 0.2s; }
+  .waveform-bar:nth-child(4) { animation-delay: 0.3s; }
+  .waveform-bar:nth-child(5) { animation-delay: 0.4s; }
+
+  /* Solfa pill */
+  .solfa-pill {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+           border transition-all duration-150 cursor-default select-none;
+  }
+  .solfa-pill-active {
+    @apply scale-110 shadow-lg;
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-50;
+    @apply flex items-center justify-around;
+    @apply border-t border-border bg-background-secondary;
+    @apply pb-safe pt-3;
+    backdrop-filter: blur(20px);
+  }
+}
+
+/* Safe area for iOS */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+}
