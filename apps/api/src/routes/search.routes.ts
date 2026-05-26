@@ -1,9 +1,8 @@
 import { Router } from "express";
+import * as searchController from "../controllers/search.controller.js";
 
 export const searchRouter = Router();
-searchRouter.get("/", (_req, res) => {
-  res.json({ success: true, message: "Song search — implemented in Session 6" });
-});
-searchRouter.post("/recognise", (_req, res) => {
-  res.json({ success: true, message: "Song recognition — implemented in Session 6" });
-});
+
+searchRouter.get("/",          searchController.search);
+searchRouter.post("/analyse",  searchController.analyseSong);
+searchRouter.get("/recent",    searchController.recentSearches);
