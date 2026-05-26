@@ -1,6 +1,7 @@
 import { Router } from "express";
+import { uploadMiddleware, uploadAudio } from "../controllers/upload.controller.js";
 
 export const uploadRouter = Router();
-uploadRouter.post("/", (_req, res) => {
-  res.json({ success: true, message: "Audio upload — implemented in Session 5" });
-});
+
+// POST /api/upload — receives multipart/form-data audio file
+uploadRouter.post("/", uploadMiddleware, uploadAudio);

@@ -1,4 +1,5 @@
 services:
+  # ── Node.js API ─────────────────────────────────────────────────
   - type: web
     name: partora-api
     env: node
@@ -13,6 +14,11 @@ services:
         value: production
       - key: PORT
         value: 4000
+      - key: AUDIO_PROCESSOR_URL
+        fromService:
+          name: partora-audio-processor
+          type: web
+          envVarKey: RENDER_INTERNAL_HOSTNAME
       - key: REDIS_HOST
         fromService:
           name: partora-redis
@@ -50,6 +56,22 @@ services:
       - key: CORS_ORIGIN
         sync: false
 
+  # ── Python Audio Processor ──────────────────────────────────────
+  - type: web
+    name: partora-audio-processor
+    env: docker
+    region: oregon
+    plan: standard          # needs more RAM for Demucs model weights (~2 GB)
+    rootDir: services/audio-processor
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ENV
+        value: production
+      - key: AUDIO_PROCESSOR_PORT
+        value: 5001
+
+  # ── Redis ────────────────────────────────────────────────────────
   - type: redis
     name: partora-redis
     plan: starter

@@ -1,18 +1,19 @@
 import Bull from "bull";
-import { supabaseAdmin } from "../config/supabase.js";
-import { generateSATBHarmonisation } from "./kimiK2.service.js";
-import { generateAllSATBAudio }       from "./elevenlabs.service.js";
-import type { LyricsAnalysisRequest } from "@partora/types";
+import { supabaseAdmin }                           from "../config/supabase.js";
+import { generateSATBHarmonisation }               from "./kimiK2.service.js";
+import { generateAllSATBAudio, isolateVoice }      from "./elevenlabs.service.js";
+import { analyseAudio, buildMidiContextString }    from "./audioProcessor.service.js";
+import type { LyricsAnalysisRequest, MusicalKey, MusicalMode } from "@partora/types";
 
-// ─── Queue definition ─────────────────────────────────────────────
+// ─── Queue ────────────────────────────────────────────────────────
 export const analysisQueue = new Bull("partora-analysis", {
   redis: {
     host: process.env.REDIS_HOST ?? "localhost",
     port: parseInt(process.env.REDIS_PORT ?? "6379", 10),
   },
   defaultJobOptions: {
-    attempts:  3,
-    backoff:   { type: "exponential", delay: 2000 },
+    attempts: 3,
+    backoff:  { type: "exponential", delay: 2000 },
     removeOnComplete: 50,
     removeOnFail:     20,
   },
@@ -20,27 +21,38 @@ export const analysisQueue = new Bull("partora-analysis", {
 
 // ─── Job payload types ────────────────────────────────────────────
 export interface LyricsJobData {
-  type: "lyrics";
-  jobId: string;
+  type:   "lyrics";
+  jobId:  string;
   userId: string;
-  input: LyricsAnalysisRequest & { title?: string; artist?: string };
+  input:  LyricsAnalysisRequest & { title?: string; artist?: string };
 }
 
-export type AnalysisJobData = LyricsJobData;
-// Upload/Record/Search variants added in Sessions 5–7
+export interface UploadJobData {
+  type:   "upload";
+  jobId:  string;
+  userId: string;
+  input: {
+    storagePath: string;
+    filename:    string;
+    mimeType:    string;
+    title?:      string;
+    artist?:     string;
+  };
+}
 
-// ─── Queue processor ──────────────────────────────────────────────
+export type AnalysisJobData = LyricsJobData | UploadJobData;
+
+// ─── Processor ───────────────────────────────────────────────────
 analysisQueue.process(async (job) => {
   const data = job.data as AnalysisJobData;
 
   try {
-    // Step 1 — mark processing
-    await updateJobStatus(data.jobId, "processing", 0, "Starting analysis…");
+    await updateJobStatus(data.jobId, "processing", 0, "Starting…");
     await job.progress(5);
 
-    if (data.type === "lyrics") {
-      await processLyricsJob(data, job);
-    }
+    if (data.type === "lyrics") await processLyricsJob(data, job);
+    if (data.type === "upload") await processUploadJob(data, job);
+
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
     await updateJobStatus(data.jobId, "failed", 0, undefined, msg);
@@ -48,32 +60,21 @@ analysisQueue.process(async (job) => {
   }
 });
 
-// ─── Lyrics job processor ─────────────────────────────────────────
-async function processLyricsJob(
-  data: LyricsJobData,
-  job: Bull.Job
-) {
-  // Step 2 — create song record
+// ─── Lyrics pipeline (Session 4) ─────────────────────────────────
+async function processLyricsJob(data: LyricsJobData, job: Bull.Job) {
   await updateJobStatus(data.jobId, "processing", 10, "Saving song…");
-  const { data: song, error: songError } = await supabaseAdmin
-    .from("songs")
-    .insert({
-      user_id:    data.userId,
-      title:      data.input.title ?? "Untitled",
-      artist:     data.input.artist,
-      key:        data.input.key,
-      mode:       data.input.mode,
-      lyrics:     data.input.lyrics,
-      source:     "lyrics",
-    })
-    .select()
-    .single();
-
-  if (songError || !song) throw new Error("Failed to create song record");
+  const song = await createSongRecord({
+    userId: data.userId,
+    title:  data.input.title ?? "Untitled",
+    artist: data.input.artist,
+    key:    data.input.key,
+    mode:   data.input.mode,
+    lyrics: data.input.lyrics,
+    source: "lyrics",
+  });
   await supabaseAdmin.from("analysis_jobs").update({ song_id: song.id }).eq("id", data.jobId);
   await job.progress(20);
 
-  // Step 3 — Kimi K2.6 harmonisation
   await updateJobStatus(data.jobId, "processing", 20, "Generating SATB harmonisation…");
   const satbParts = await generateSATBHarmonisation({
     lyrics: data.input.lyrics,
@@ -84,48 +85,114 @@ async function processLyricsJob(
   });
   await job.progress(55);
 
-  // Step 4 — ElevenLabs TTS for all 4 parts
   await updateJobStatus(data.jobId, "processing", 55, "Generating voice audio…");
-  const satbTexts = {
+  const audioResults = await generateAllSATBAudio({
     soprano: satbParts.soprano.solfa_text,
     alto:    satbParts.alto.solfa_text,
     tenor:   satbParts.tenor.solfa_text,
     bass:    satbParts.bass.solfa_text,
-  };
-  const audioResults = await generateAllSATBAudio(satbTexts);
-  await job.progress(80);
-
-  // Step 5 — Upload audio to Supabase Storage
-  await updateJobStatus(data.jobId, "processing", 80, "Storing audio files…");
-  const audioUrls = await uploadAudioFiles(data.userId, song.id, audioResults);
-  await job.progress(90);
-
-  // Step 6 — Save SATB results
-  await updateJobStatus(data.jobId, "processing", 90, "Saving results…");
-  const { error: resultError } = await supabaseAdmin.from("satb_results").insert({
-    song_id:       song.id,
-    user_id:       data.userId,
-    key:           data.input.key,
-    mode:          data.input.mode,
-    soprano_solfa: satbParts.soprano.solfa_text,
-    alto_solfa:    satbParts.alto.solfa_text,
-    tenor_solfa:   satbParts.tenor.solfa_text,
-    bass_solfa:    satbParts.bass.solfa_text,
-    soprano_data:  { ...satbParts.soprano, ...audioUrls.soprano },
-    alto_data:     { ...satbParts.alto,    ...audioUrls.alto },
-    tenor_data:    { ...satbParts.tenor,   ...audioUrls.tenor },
-    bass_data:     { ...satbParts.bass,    ...audioUrls.bass },
   });
+  await job.progress(85);
 
-  if (resultError) throw new Error("Failed to save SATB results");
-  await job.progress(100);
+  await updateJobStatus(data.jobId, "processing", 85, "Storing audio…");
+  const audioUrls = await uploadAudioFiles(data.userId, song.id, audioResults);
+  await job.progress(95);
 
-  // Step 7 — mark complete
+  await saveSATBResult({ jobId: data.jobId, song, userId: data.userId, satbParts, audioUrls });
   await updateJobStatus(data.jobId, "complete", 100, "Done!");
-  return { song_id: song.id };
 }
 
-// ─── Upload audio buffers to Supabase Storage ─────────────────────
+// ─── Upload pipeline (Session 5) ─────────────────────────────────
+async function processUploadJob(data: UploadJobData, job: Bull.Job) {
+  // Step 1 — download uploaded file from Supabase Storage
+  await updateJobStatus(data.jobId, "processing", 8, "Retrieving audio file…");
+  const { data: fileData, error: dlErr } = await supabaseAdmin.storage
+    .from("audio-uploads")
+    .download(data.input.storagePath);
+
+  if (dlErr || !fileData) throw new Error("Could not retrieve uploaded audio file");
+  const audioBuffer = Buffer.from(await fileData.arrayBuffer());
+  await job.progress(12);
+
+  // Step 2 — ElevenLabs Voice Isolator (clean the audio first)
+  await updateJobStatus(data.jobId, "processing", 12, "Isolating vocals…");
+  const cleanBuffer = await isolateVoice(audioBuffer);
+  await job.progress(25);
+
+  // Step 3 — Python microservice: Demucs + Basic Pitch + key detection
+  await updateJobStatus(data.jobId, "processing", 25, "Analysing audio with Demucs + Basic Pitch…");
+  const analysis = await analyseAudio(cleanBuffer, data.input.filename, data.input.mimeType);
+  await job.progress(50);
+
+  // Step 4 — Create song record with detected key
+  await updateJobStatus(data.jobId, "processing", 50, "Saving song details…");
+  const song = await createSongRecord({
+    userId:  data.userId,
+    title:   data.input.title ?? data.input.filename.replace(/\.[^/.]+$/, ""),
+    artist:  data.input.artist,
+    key:     analysis.key,
+    mode:    analysis.mode,
+    source:  "upload",
+  });
+  await supabaseAdmin.from("analysis_jobs").update({ song_id: song.id }).eq("id", data.jobId);
+  await job.progress(55);
+
+  // Step 5 — Kimi K2.6: harmonise using MIDI context
+  await updateJobStatus(data.jobId, "processing", 55, "Generating SATB harmonisation…");
+  const midiContext = buildMidiContextString(analysis.midi_notes);
+  const satbParts = await generateSATBHarmonisation({
+    lyrics: `[Melody extracted from audio]\n${midiContext}`,
+    key:    analysis.key,
+    mode:   analysis.mode,
+    title:  song.title,
+    artist: data.input.artist,
+  });
+  await job.progress(75);
+
+  // Step 6 — ElevenLabs TTS all 4 parts
+  await updateJobStatus(data.jobId, "processing", 75, "Generating voice audio…");
+  const audioResults = await generateAllSATBAudio({
+    soprano: satbParts.soprano.solfa_text,
+    alto:    satbParts.alto.solfa_text,
+    tenor:   satbParts.tenor.solfa_text,
+    bass:    satbParts.bass.solfa_text,
+  });
+  await job.progress(90);
+
+  // Step 7 — Upload + save
+  await updateJobStatus(data.jobId, "processing", 90, "Storing audio files…");
+  const audioUrls = await uploadAudioFiles(data.userId, song.id, audioResults);
+  await saveSATBResult({ jobId: data.jobId, song, userId: data.userId, satbParts, audioUrls });
+
+  // Clean up uploaded file
+  await supabaseAdmin.storage.from("audio-uploads").remove([data.input.storagePath]);
+
+  await updateJobStatus(data.jobId, "complete", 100, "Done!");
+}
+
+// ─── Shared helpers ───────────────────────────────────────────────
+async function createSongRecord(fields: {
+  userId: string; title: string; artist?: string;
+  key: string; mode: string; source: string; lyrics?: string;
+}) {
+  const { data: song, error } = await supabaseAdmin
+    .from("songs")
+    .insert({
+      user_id: fields.userId,
+      title:   fields.title,
+      artist:  fields.artist,
+      key:     fields.key,
+      mode:    fields.mode,
+      lyrics:  fields.lyrics,
+      source:  fields.source,
+    })
+    .select()
+    .single();
+
+  if (error || !song) throw new Error("Failed to create song record");
+  return song as { id: string; title: string };
+}
+
 async function uploadAudioFiles(
   userId: string,
   songId: string,
@@ -144,24 +211,42 @@ async function uploadAudioFiles(
 
     const { data: signed } = await supabaseAdmin.storage
       .from("audio-outputs")
-      .createSignedUrl(path, 60 * 60 * 24 * 7); // 7-day signed URL
+      .createSignedUrl(path, 60 * 60 * 24 * 7);
 
-    urls[part] = {
-      tts_audio_url: signed?.signedUrl ?? "",
-      timestamps,
-    };
+    urls[part] = { tts_audio_url: signed?.signedUrl ?? "", timestamps };
   }
-
   return urls;
 }
 
-// ─── Status helper ────────────────────────────────────────────────
+async function saveSATBResult({
+  jobId, song, userId, satbParts, audioUrls,
+}: {
+  jobId: string;
+  song: { id: string };
+  userId: string;
+  satbParts: Awaited<ReturnType<typeof generateSATBHarmonisation>>;
+  audioUrls: Record<string, { tts_audio_url: string; timestamps: unknown[] }>;
+}) {
+  const { error } = await supabaseAdmin.from("satb_results").insert({
+    song_id:       song.id,
+    user_id:       userId,
+    key:           (satbParts.soprano as { part: string }).part,
+    mode:          "major",
+    soprano_solfa: satbParts.soprano.solfa_text,
+    alto_solfa:    satbParts.alto.solfa_text,
+    tenor_solfa:   satbParts.tenor.solfa_text,
+    bass_solfa:    satbParts.bass.solfa_text,
+    soprano_data:  { ...satbParts.soprano, ...audioUrls.soprano },
+    alto_data:     { ...satbParts.alto,    ...audioUrls.alto    },
+    tenor_data:    { ...satbParts.tenor,   ...audioUrls.tenor   },
+    bass_data:     { ...satbParts.bass,    ...audioUrls.bass    },
+  });
+  if (error) throw new Error("Failed to save SATB results");
+  await updateJobStatus(jobId, "complete", 100, "Done!");
+}
+
 async function updateJobStatus(
-  jobId: string,
-  status: string,
-  progress: number,
-  step?: string,
-  error?: string
+  jobId: string, status: string, progress: number, step?: string, error?: string
 ) {
   await supabaseAdmin
     .from("analysis_jobs")
@@ -169,11 +254,5 @@ async function updateJobStatus(
     .eq("id", jobId);
 }
 
-// ─── Event listeners ──────────────────────────────────────────────
-analysisQueue.on("failed", (job, err) => {
-  console.error(`Job ${job.id} failed:`, err.message);
-});
-
-analysisQueue.on("completed", (job) => {
-  console.info(`Job ${job.id} completed`);
-});
+analysisQueue.on("failed",    (job, err)  => console.error(`Job ${job.id} failed:`, err.message));
+analysisQueue.on("completed", (job)        => console.info(`Job ${job.id} completed`));
