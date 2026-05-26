@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { BookmarkPlus, Share2, RefreshCw } from "lucide-react";
-import { SATBCardGrid }  from "@/components/solfa/VoicePartCard";
-import { Button }        from "@/components/ui/Button";
-import { Badge }         from "@/components/ui/index";
-import { useToast }      from "@/components/ui/Toast";
-import { api }           from "@/lib/api";
+import { SATBCardGrid } from "@/components/solfa/VoicePartCard";
+import { Button }       from "@/components/ui/Button";
+import { Badge }        from "@/components/ui/index";
+import { useToast }     from "@/components/ui/Toast";
+import { api }          from "@/lib/api";
 import type { SATBResult } from "@partora/types";
 
 interface AnalysisResultProps {
@@ -18,6 +18,7 @@ export function AnalysisResult({ result, onReset }: AnalysisResultProps) {
   const { success, error } = useToast();
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
+  const [, forceRefresh]    = useState(0);
 
   const song = (result as unknown as { song?: { title?: string; artist?: string } }).song;
 
@@ -33,16 +34,12 @@ export function AnalysisResult({ result, onReset }: AnalysisResultProps) {
     const url = `${window.location.origin}/analyse/${result.song_id}`;
     try {
       if (navigator.share) await navigator.share({ title: "Partora analysis", url });
-      else {
-        await navigator.clipboard.writeText(url);
-        success("Link copied to clipboard!");
-      }
+      else { await navigator.clipboard.writeText(url); success("Link copied!"); }
     } catch { /* user cancelled */ }
   }
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-white">
@@ -58,11 +55,8 @@ export function AnalysisResult({ result, onReset }: AnalysisResultProps) {
             <Share2 className="h-4 w-4" />
           </Button>
           <Button
-            variant={saved ? "secondary" : "soprano"}
-            size="icon"
-            onClick={handleSave}
-            loading={saving}
-            disabled={saved}
+            variant={saved ? "secondary" : "soprano"} size="icon"
+            onClick={handleSave} loading={saving} disabled={saved}
             aria-label="Save to library"
           >
             <BookmarkPlus className="h-4 w-4" />
@@ -70,16 +64,18 @@ export function AnalysisResult({ result, onReset }: AnalysisResultProps) {
         </div>
       </div>
 
-      {/* SATB Cards — now with coach context */}
+      {/* SATBCardGrid now receives resultId for sing generation + voice changer */}
       <SATBCardGrid
         soprano={result.soprano}
         alto={result.alto}
         tenor={result.tenor}
         bass={result.bass}
+        resultId={result.id}
         songTitle={song?.title}
         artist={song?.artist}
         musicalKey={result.key}
         mode={result.mode}
+        onSingComplete={() => forceRefresh((n) => n + 1)}
       />
 
       <Button variant="ghost" size="sm" fullWidth onClick={onReset} className="mt-2">

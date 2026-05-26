@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Music2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { AudioPlayer }     from "@/components/audio/AudioPlayer";
+import { cn }                  from "@/lib/utils";
+import { AudioPlayer }         from "@/components/audio/AudioPlayer";
 import { SolfaDisplay, SolfaText } from "@/components/solfa/SolfaDisplay";
-import { Badge }           from "@/components/ui/index";
-import { AskCoachButton }  from "@/components/coach/AskCoachButton";
+import { Badge }               from "@/components/ui/index";
+import { AskCoachButton }      from "@/components/coach/AskCoachButton";
+import { SingGenerateButton }  from "@/components/sing/SingGenerateButton";
+import { VoiceChangerPanel }   from "@/components/sing/VoiceChangerPanel";
 import type { VoicePart, VoicePartResult } from "@partora/types";
 
 const PART_META: Record<VoicePart, {
   label: string; emoji: string; range: string;
-  cardClass: string; badgeVariant: "soprano" | "alto" | "tenor" | "bass";
+  cardClass: string; badgeVariant: "soprano"|"alto"|"tenor"|"bass";
 }> = {
   soprano: { label: "Soprano", emoji: "🎶", range: "C4–A5", cardClass: "bg-voice-soprano border-soprano/30", badgeVariant: "soprano" },
   alto:    { label: "Alto",    emoji: "🎵", range: "G3–E5", cardClass: "bg-voice-alto border-alto/30",       badgeVariant: "alto"    },
@@ -20,21 +22,25 @@ const PART_META: Record<VoicePart, {
 };
 
 interface VoicePartCardProps {
-  result:          VoicePartResult;
-  songTitle?:      string;
-  artist?:         string;
-  musicalKey?:     string;
-  mode?:           string;
+  result:           VoicePartResult;
+  resultId?:        string;
+  songTitle?:       string;
+  artist?:          string;
+  musicalKey?:      string;
+  mode?:            string;
   defaultExpanded?: boolean;
-  className?:      string;
+  onSingComplete?:  () => void;
+  className?:       string;
 }
 
 export function VoicePartCard({
-  result, songTitle, artist, musicalKey, mode,
-  defaultExpanded = false, className,
+  result, resultId, songTitle, artist, musicalKey, mode,
+  defaultExpanded = false, onSingComplete, className,
 }: VoicePartCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const meta = PART_META[result.part];
+  const hasSung    = !!result.sung_audio_url;
+  const hasBacking = !!result.backing_audio_url;
 
   return (
     <div className={cn("rounded-2xl border transition-all duration-200", meta.cardClass, className)}>
@@ -49,6 +55,7 @@ export function VoicePartCard({
           <div className="flex items-center gap-2">
             <span className="font-semibold text-white">{meta.label}</span>
             <Badge variant={meta.badgeVariant}>{meta.range}</Badge>
+            {hasSung && <Badge variant="success" className="text-[10px]">Sung</Badge>}
           </div>
           {!expanded && (
             <p className="text-xs text-muted mt-0.5 truncate">
@@ -61,22 +68,19 @@ export function VoicePartCard({
         </span>
       </button>
 
-      {/* Expanded content */}
       {expanded && (
         <div className="px-4 pb-5 space-y-4 border-t border-white/10 pt-4">
 
-          {/* Solfa notation */}
+          {/* Tonic Solfa */}
           <div>
-            <p className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
-              Tonic Solfa
-            </p>
+            <p className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2">Tonic Solfa</p>
             {result.solfa_notes.length > 0
               ? <SolfaDisplay notes={result.solfa_notes} voicePart={result.part} showLyrics />
               : <SolfaText    text={result.solfa_text}   voicePart={result.part} />
             }
           </div>
 
-          {/* TTS audio */}
+          {/* Spoken Solfa (TTS) */}
           {result.tts_audio_url && (
             <div>
               <p className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2 flex items-center gap-1">
@@ -92,8 +96,8 @@ export function VoicePartCard({
             </div>
           )}
 
-          {/* Sung audio */}
-          {result.sung_audio_url && (
+          {/* Sung Demo (DiffSinger) */}
+          {hasSung && result.sung_audio_url && (
             <div>
               <p className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
                 🎙️ Sung Demonstration
@@ -106,8 +110,8 @@ export function VoicePartCard({
             </div>
           )}
 
-          {/* Backing track */}
-          {result.backing_audio_url && (
+          {/* Backing Track */}
+          {hasBacking && result.backing_audio_url && (
             <div>
               <p className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
                 🎹 Backing Track
@@ -120,7 +124,18 @@ export function VoicePartCard({
             </div>
           )}
 
-          {/* Range + Ask Coach */}
+          {/* Generate sung demo (if not yet generated) */}
+          {!hasSung && resultId && (
+            <SingGenerateButton
+              resultId={resultId}
+              onComplete={onSingComplete ?? (() => window.location.reload())}
+            />
+          )}
+
+          {/* Voice Changer */}
+          <VoiceChangerPanel voicePart={result.part} />
+
+          {/* Footer row: range + Ask Coach */}
           <div className="flex items-center justify-between pt-1">
             <div className="flex gap-4">
               <div>
@@ -132,8 +147,6 @@ export function VoicePartCard({
                 <p className="text-sm font-mono text-white">{result.range.high}</p>
               </div>
             </div>
-
-            {/* Deep-link to coach with this part's context */}
             <AskCoachButton
               voicePart={result.part}
               songTitle={songTitle}
@@ -151,18 +164,18 @@ export function VoicePartCard({
 
 export function SATBCardGrid({
   soprano, alto, tenor, bass,
-  songTitle, artist, musicalKey, mode,
-  className,
+  resultId, songTitle, artist, musicalKey, mode,
+  onSingComplete, className,
 }: {
-  soprano: VoicePartResult;
-  alto:    VoicePartResult;
-  tenor:   VoicePartResult;
-  bass:    VoicePartResult;
-  songTitle?:  string;
-  artist?:     string;
-  musicalKey?: string;
-  mode?:       string;
-  className?:  string;
+  soprano: VoicePartResult; alto: VoicePartResult;
+  tenor:   VoicePartResult; bass: VoicePartResult;
+  resultId?:       string;
+  songTitle?:      string;
+  artist?:         string;
+  musicalKey?:     string;
+  mode?:           string;
+  onSingComplete?: () => void;
+  className?:      string;
 }) {
   return (
     <div className={cn("space-y-3", className)}>
@@ -170,11 +183,13 @@ export function SATBCardGrid({
         <VoicePartCard
           key={result.part}
           result={result}
+          resultId={resultId}
           songTitle={songTitle}
           artist={artist}
           musicalKey={musicalKey}
           mode={mode}
           defaultExpanded={i === 0}
+          onSingComplete={onSingComplete}
         />
       ))}
     </div>
