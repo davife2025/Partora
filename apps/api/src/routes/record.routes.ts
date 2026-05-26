@@ -1,6 +1,6 @@
 import { Router } from "express";
+import { submitRecording } from "../controllers/record.controller.js";
 
 export const recordRouter = Router();
-recordRouter.post("/", (_req, res) => {
-  res.json({ success: true, message: "Live recording analysis — implemented in Session 7" });
-});
+
+recordRouter.post("/", submitRecording);
