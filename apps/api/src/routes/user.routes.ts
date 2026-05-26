@@ -1,9 +1,17 @@
 import { Router } from "express";
+import * as userController from "../controllers/user.controller.js";
 
 export const userRouter = Router();
-userRouter.get("/profile", (_req, res) => {
-  res.json({ success: true, message: "User profile — implemented in Session 2" });
-});
-userRouter.get("/history", (_req, res) => {
-  res.json({ success: true, message: "Song history — implemented in Session 10" });
-});
+
+// Profile
+userRouter.get("/profile",               userController.getProfile);
+userRouter.patch("/profile",             userController.updateProfile);
+
+// History
+userRouter.get("/history",               userController.getHistory);
+userRouter.delete("/songs/:id",          userController.deleteSong);
+
+// Library
+userRouter.get("/library",               userController.getLibrary);
+userRouter.post("/library",              userController.saveToLibrary);
+userRouter.delete("/library/:song_id",   userController.removeFromLibrary);
