@@ -1,18 +1,14 @@
 import { Router } from "express";
+import * as analysisController from "../controllers/analysis.controller.js";
 
 export const analysisRouter = Router();
 
-// POST /api/analysis/lyrics  → Mode 1
-analysisRouter.post("/lyrics", (_req, res) => {
-  res.json({ success: true, message: "Lyrics analysis — implemented in Session 4" });
-});
+// Mode 1 — Lyrics
+analysisRouter.post("/lyrics",         analysisController.analyseLyrics);
 
-// GET /api/analysis/job/:id  → poll job status
-analysisRouter.get("/job/:id", (_req, res) => {
-  res.json({ success: true, message: "Job status — implemented in Session 4" });
-});
+// Job polling
+analysisRouter.get("/job/:id",         analysisController.getJobStatus);
 
-// GET /api/analysis/:id      → get saved result
-analysisRouter.get("/:id", (_req, res) => {
-  res.json({ success: true, message: "Get result — implemented in Session 4" });
-});
+// Results
+analysisRouter.get("/song/:songId",    analysisController.getResultBySong);
+analysisRouter.get("/:id",             analysisController.getResult);

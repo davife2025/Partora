@@ -13,6 +13,16 @@ services:
         value: production
       - key: PORT
         value: 4000
+      - key: REDIS_HOST
+        fromService:
+          name: partora-redis
+          type: redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          name: partora-redis
+          type: redis
+          property: port
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY
@@ -20,6 +30,14 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_VOICE_SOPRANO
+        sync: false
+      - key: ELEVENLABS_VOICE_ALTO
+        sync: false
+      - key: ELEVENLABS_VOICE_TENOR
+        sync: false
+      - key: ELEVENLABS_VOICE_BASS
         sync: false
       - key: HUGGINGFACE_API_KEY
         sync: false
@@ -31,3 +49,8 @@ services:
         generateValue: true
       - key: CORS_ORIGIN
         sync: false
+
+  - type: redis
+    name: partora-redis
+    plan: starter
+    maxmemoryPolicy: noeviction
