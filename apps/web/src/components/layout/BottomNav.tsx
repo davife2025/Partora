@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, Mic, BookOpen } from "lucide-react";
+import { Home, Search, Mic, BookOpen, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -10,6 +10,7 @@ const TABS = [
   { href: "/search",  label: "Search",  icon: Search },
   { href: "/record",  label: "Record",  icon: Mic },
   { href: "/library", label: "Library", icon: BookOpen },
+  { href: "/coach",   label: "Coach",   icon: MessageCircle },
 ];
 
 export function BottomNav() {
@@ -28,7 +29,7 @@ export function BottomNav() {
             aria-label={label}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex flex-col items-center gap-1 px-4 min-h-[56px] justify-center",
+              "flex flex-col items-center gap-1 px-3 min-h-[56px] justify-center",
               "transition-all duration-150 relative",
               isRecord
                 ? "text-white"
@@ -38,7 +39,6 @@ export function BottomNav() {
             )}
           >
             {isRecord ? (
-              /* Big mic button */
               <span className={cn(
                 "flex items-center justify-center w-12 h-12 rounded-full",
                 "bg-soprano shadow-lg shadow-soprano/30",

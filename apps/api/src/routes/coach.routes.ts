@@ -1,6 +1,7 @@
 import { Router } from "express";
+import { getWsToken } from "../controllers/coach.controller.js";
 
 export const coachRouter = Router();
-coachRouter.get("/ws-token", (_req, res) => {
-  res.json({ success: true, message: "Voice coach WebSocket token — implemented in Session 8" });
-});
+
+// Issue a one-time WebSocket connection token
+coachRouter.get("/ws-token", getWsToken);

@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import { BookmarkPlus, Share2, RefreshCw } from "lucide-react";
-import { SATBCardGrid } from "@/components/solfa/VoicePartCard";
-import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/index";
-import { useToast } from "@/components/ui/Toast";
-import { api } from "@/lib/api";
+import { SATBCardGrid }  from "@/components/solfa/VoicePartCard";
+import { Button }        from "@/components/ui/Button";
+import { Badge }         from "@/components/ui/index";
+import { useToast }      from "@/components/ui/Toast";
+import { api }           from "@/lib/api";
 import type { SATBResult } from "@partora/types";
 
 interface AnalysisResultProps {
-  result: SATBResult;
+  result:  SATBResult;
   onReset: () => void;
 }
 
@@ -18,6 +18,8 @@ export function AnalysisResult({ result, onReset }: AnalysisResultProps) {
   const { success, error } = useToast();
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
+
+  const song = (result as unknown as { song?: { title?: string; artist?: string } }).song;
 
   async function handleSave() {
     setSaving(true);
@@ -30,9 +32,8 @@ export function AnalysisResult({ result, onReset }: AnalysisResultProps) {
   async function handleShare() {
     const url = `${window.location.origin}/analyse/${result.song_id}`;
     try {
-      if (navigator.share) {
-        await navigator.share({ title: "Partora analysis", url });
-      } else {
+      if (navigator.share) await navigator.share({ title: "Partora analysis", url });
+      else {
         await navigator.clipboard.writeText(url);
         success("Link copied to clipboard!");
       }
@@ -45,7 +46,7 @@ export function AnalysisResult({ result, onReset }: AnalysisResultProps) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-white">
-            {(result as unknown as { song?: { title?: string } }).song?.title ?? "Results"}
+            {song?.title ?? "Results"}
           </h2>
           <div className="flex items-center gap-2 mt-1.5">
             <Badge variant="soprano">{result.key} {result.mode}</Badge>
@@ -53,12 +54,7 @@ export function AnalysisResult({ result, onReset }: AnalysisResultProps) {
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleShare}
-            aria-label="Share result"
-          >
+          <Button variant="ghost" size="icon" onClick={handleShare} aria-label="Share">
             <Share2 className="h-4 w-4" />
           </Button>
           <Button
@@ -74,22 +70,19 @@ export function AnalysisResult({ result, onReset }: AnalysisResultProps) {
         </div>
       </div>
 
-      {/* SATB Cards */}
+      {/* SATB Cards — now with coach context */}
       <SATBCardGrid
         soprano={result.soprano}
         alto={result.alto}
         tenor={result.tenor}
         bass={result.bass}
+        songTitle={song?.title}
+        artist={song?.artist}
+        musicalKey={result.key}
+        mode={result.mode}
       />
 
-      {/* Re-analyse */}
-      <Button
-        variant="ghost"
-        size="sm"
-        fullWidth
-        onClick={onReset}
-        className="mt-2"
-      >
+      <Button variant="ghost" size="sm" fullWidth onClick={onReset} className="mt-2">
         <RefreshCw className="h-3.5 w-3.5" />
         Analyse another song
       </Button>
