@@ -1,5 +1,5 @@
 services:
-  # ── Node.js API ─────────────────────────────────────────────────
+  # ── Node.js API ──────────────────────────────────────────────
   - type: web
     name: partora-api
     env: node
@@ -15,10 +15,7 @@ services:
       - key: PORT
         value: 4000
       - key: AUDIO_PROCESSOR_URL
-        fromService:
-          name: partora-audio-processor
-          type: web
-          envVarKey: RENDER_INTERNAL_HOSTNAME
+        value: https://partora-audio-processor.onrender.com
       - key: REDIS_HOST
         fromService:
           name: partora-redis
@@ -49,6 +46,14 @@ services:
         sync: false
       - key: HUGGINGFACE_MODEL_ID
         value: moonshotai/Kimi-K2.6
+      - key: HF_MODEL_SOPRANO
+        value: ASLP-lab/DiffSinger
+      - key: HF_MODEL_ALTO
+        value: ASLP-lab/DiffSinger
+      - key: HF_MODEL_TENOR
+        value: ASLP-lab/DiffSinger
+      - key: HF_MODEL_BASS
+        value: ASLP-lab/DiffSinger
       - key: AUDD_API_TOKEN
         sync: false
       - key: API_SECRET
@@ -56,12 +61,12 @@ services:
       - key: CORS_ORIGIN
         sync: false
 
-  # ── Python Audio Processor ──────────────────────────────────────
+  # ── Python Audio Processor ───────────────────────────────────
   - type: web
     name: partora-audio-processor
     env: docker
     region: oregon
-    plan: standard          # needs more RAM for Demucs model weights (~2 GB)
+    plan: standard
     rootDir: services/audio-processor
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
@@ -71,7 +76,7 @@ services:
       - key: AUDIO_PROCESSOR_PORT
         value: 5001
 
-  # ── Redis ────────────────────────────────────────────────────────
+  # ── Redis ────────────────────────────────────────────────────
   - type: redis
     name: partora-redis
     plan: starter

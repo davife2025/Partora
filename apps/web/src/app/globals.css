@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @layer base {
   :root {
@@ -19,25 +19,26 @@
 
   * { box-sizing: border-box; }
 
+  html { scroll-behavior: smooth; }
+
   html, body {
     @apply bg-background text-white antialiased;
     font-family: 'Inter', system-ui, sans-serif;
   }
 
-  ::selection {
-    background: rgba(127, 119, 221, 0.3);
-  }
+  ::selection { background: rgba(127, 119, 221, 0.3); }
 
-  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 99px;
-  }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  /* Hide scrollbar for filter tabs but keep scroll */
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
 @layer components {
-  /* Glassmorphism card base */
+  /* Glassmorphism */
   .glass {
     @apply bg-background-secondary border border-border rounded-2xl;
     backdrop-filter: blur(12px);
@@ -48,7 +49,6 @@
     @apply glass transition-all duration-200;
   }
   .glass-hover:hover {
-    @apply border-border;
     background: rgba(26, 26, 40, 0.9);
   }
 
@@ -58,10 +58,27 @@
   .voice-tenor   { color: var(--tenor); }
   .voice-bass    { color: var(--bass); }
 
-  .bg-voice-soprano { background: rgba(127, 119, 221, 0.15); border-color: rgba(127, 119, 221, 0.3); }
-  .bg-voice-alto    { background: rgba(45, 168, 130, 0.15);  border-color: rgba(45, 168, 130, 0.3); }
-  .bg-voice-tenor   { background: rgba(212, 130, 10, 0.15);  border-color: rgba(212, 130, 10, 0.3); }
-  .bg-voice-bass    { background: rgba(24, 95, 165, 0.15);   border-color: rgba(24, 95, 165, 0.3); }
+  .bg-voice-soprano { background: rgba(127, 119, 221, 0.12); border-color: rgba(127, 119, 221, 0.3); }
+  .bg-voice-alto    { background: rgba(45, 168, 130, 0.12);  border-color: rgba(45, 168, 130, 0.3); }
+  .bg-voice-tenor   { background: rgba(212, 130, 10, 0.12);  border-color: rgba(212, 130, 10, 0.3); }
+  .bg-voice-bass    { background: rgba(24, 95, 165, 0.12);   border-color: rgba(24, 95, 165, 0.3); }
+
+  /* Solfa pill */
+  .solfa-pill {
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium
+           border transition-all duration-150 cursor-default select-none;
+  }
+  .solfa-pill-active { @apply scale-110 shadow-lg; }
+
+  /* Bottom nav */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-50;
+    @apply flex items-center justify-around;
+    @apply border-t border-border bg-background-secondary;
+    @apply pb-safe pt-3;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
 
   /* Waveform bars */
   .waveform-bar {
@@ -73,22 +90,10 @@
   .waveform-bar:nth-child(4) { animation-delay: 0.3s; }
   .waveform-bar:nth-child(5) { animation-delay: 0.4s; }
 
-  /* Solfa pill */
-  .solfa-pill {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-           border transition-all duration-150 cursor-default select-none;
-  }
-  .solfa-pill-active {
-    @apply scale-110 shadow-lg;
-  }
-
-  /* Bottom nav */
-  .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 z-50;
-    @apply flex items-center justify-around;
-    @apply border-t border-border bg-background-secondary;
-    @apply pb-safe pt-3;
-    backdrop-filter: blur(20px);
+  /* Landing page gradient text */
+  .gradient-text {
+    @apply text-transparent bg-clip-text;
+    background-image: linear-gradient(135deg, var(--soprano), var(--alto), var(--tenor), var(--bass));
   }
 }
 
@@ -96,3 +101,39 @@
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 }
+
+/* Keyframes */
+@keyframes waveform {
+  0%, 100% { transform: scaleY(0.4); }
+  50%       { transform: scaleY(1); }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(0.95); opacity: 0.7; }
+  70%  { transform: scale(1.1);  opacity: 0.3; }
+  100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+@keyframes bounce-subtle {
+  0%   { transform: scaleY(0.4); }
+  100% { transform: scaleY(1); }
+}
+
+/* Slide-in animations for modals */
+@keyframes slide-in-from-bottom {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes zoom-in {
+  from { transform: scale(0.95); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+.animate-in {
+  animation-fill-mode: both;
+  animation-duration: 200ms;
+}
+.slide-in-from-bottom-4 { animation-name: slide-in-from-bottom; }
+.zoom-in-95             { animation-name: zoom-in; }
+.duration-200           { animation-duration: 200ms; }
