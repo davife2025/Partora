@@ -1,41 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { ToastProvider }               from "@/components/ui/Toast";
-import { ServiceWorkerRegistration }   from "@/components/ui/ServiceWorkerRegistration";
+import { ToastProvider } from "@/components/ui/Toast";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title:       { default: "Partora", template: "%s | Partora" },
+  title: { default: "Partora", template: "%s | Partora" },
   description: "AI-powered voice parts and tonic solfa for singers and musicians.",
-  manifest:    "/manifest.json",
+  manifest: "/manifest.json",
   appleWebApp: {
-    capable:         true,
-    statusBarStyle:  "black-translucent",
-    title:           "Partora",
-  },
-  openGraph: {
-    type:      "website",
-    siteName:  "Partora",
-    title:     "Partora — AI Voice Parts & Tonic Solfa",
-    description: "Generate SATB voice parts and tonic solfa for any song instantly.",
-  },
-  twitter: {
-    card:  "summary",
+    capable: true,
+    statusBarStyle: "black-translucent",
     title: "Partora",
-    description: "AI-powered tonic solfa and SATB harmonisation for musicians.",
-  },
-  icons: {
-    icon:  "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
   },
 };
 
 export const viewport: Viewport = {
-  width:            "device-width",
-  initialScale:     1,
-  maximumScale:     1,
-  userScalable:     false,
-  themeColor:       "#0D0D14",
-  viewportFit:      "cover",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#0D0D14",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -45,7 +28,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ToastProvider>
           {children}
         </ToastProvider>
-        <ServiceWorkerRegistration />
       </body>
     </html>
   );
