@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+# Upgrade pip and setuptools first
+RUN pip install --upgrade pip setuptools wheel
+
 # Install Python dependencies
 COPY pyproject.toml .
 RUN pip install --no-cache-dir -e .
