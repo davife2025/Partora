@@ -1,15 +1,15 @@
 {
   "framework": "nextjs",
   "buildCommand": "cd ../.. && npx turbo run build --filter=@partora/web",
-  "outputDirectory": "apps/web/.next",
-  "installCommand": "npm install",
+  "outputDirectory": ".next",
+  "installCommand": "cd ../.. && npm install",
   "regions": ["iad1"],
 
   "headers": [
     {
       "source": "/sw.js",
       "headers": [
-        { "key": "Cache-Control",       "value": "public, max-age=0, must-revalidate" },
+        { "key": "Cache-Control",          "value": "public, max-age=0, must-revalidate" },
         { "key": "Service-Worker-Allowed", "value": "/" }
       ]
     }

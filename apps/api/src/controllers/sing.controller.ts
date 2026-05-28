@@ -123,7 +123,7 @@ export async function generateSung(
     // Run generation async (fire-and-forget from HTTP perspective)
     runSingGeneration({
       jobId,
-      resultId,
+      resultId: Array.isArray(resultId) ? resultId[0] : resultId,
       satb,
       song,
       userId:          req.userId!,
