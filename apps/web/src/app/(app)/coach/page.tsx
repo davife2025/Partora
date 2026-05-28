@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useSearchParams } from "next/navigation";
-import { useEffect as useEff, useRef as useR, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { PageHeader }            from "@/components/layout/PageHeader";
 import { CoachStatusBadge }      from "@/components/coach/CoachStatusBadge";
 import { CoachMessageBubble, ThinkingBubble } from "@/components/coach/CoachMessageBubble";
@@ -14,7 +14,6 @@ import { AlertCircle, Wifi, WifiOff } from "lucide-react";
 import type { VoicePart }        from "@partora/types";
 
 export default function CoachPage() {
-  // Read context from URL params (set when navigating from analysis result)
   const searchParams  = useSearchParams();
   const voicePart     = (searchParams.get("voice_part") ?? undefined) as VoicePart | undefined;
   const songTitle     = searchParams.get("song_title")  ?? undefined;
@@ -32,10 +31,10 @@ export default function CoachPage() {
     voicePart, songTitle, artist, key, mode,
   });
 
-  const messagesEndRef = useR<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isConnecting   = status === "connecting";
 
-  // Auto-scroll to latest message
-  useEff(() => {
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isBusy]);
 
@@ -59,7 +58,7 @@ export default function CoachPage() {
               variant={isConnected ? "danger" : "soprano"}
               size="sm"
               onClick={isConnected ? disconnect : connect}
-              loading={status === "connecting"}
+              loading={isConnecting}
             >
               {isConnected
                 ? <><WifiOff className="h-3.5 w-3.5" /> Disconnect</>
@@ -93,7 +92,7 @@ export default function CoachPage() {
                 variant="primary"
                 fullWidth
                 onClick={connect}
-                loading={status === "connecting"}
+                loading={isConnecting}
               >
                 <Wifi className="h-4 w-4" />
                 Start Coaching Session

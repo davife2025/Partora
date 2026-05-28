@@ -8,14 +8,15 @@ import { SolfaPDFExport }     from "@/components/library/SolfaPDFExport";
 import type { Metadata }      from "next";
 import type { VoicePartResult } from "@partora/types";
 
-interface Props { params: { id: string } }
+interface Props { params: Promise<{ id: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
   const supabase = await createClient();
   const { data } = await supabase
     .from("songs")
     .select("title, artist")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
   return {
     title:       data ? `${data.title}${data.artist ? ` — ${data.artist}` : ""}` : "Analysis",
@@ -29,6 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ResultPage({ params }: Props) {
+  const { id } = await params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -36,7 +38,7 @@ export default async function ResultPage({ params }: Props) {
   const { data: satb } = await supabase
     .from("satb_results")
     .select("*, songs(title, artist, key, mode, artwork_url, source, lyrics)")
-    .eq("song_id", params.id)
+    .eq("song_id", id)
     .eq("user_id", user.id)
     .single();
 
@@ -66,7 +68,7 @@ export default async function ResultPage({ params }: Props) {
               bass={satb.bass_data       as VoicePartResult}
             />
             <ShareResultButton
-              songId={params.id}
+              songId={id}
               songTitle={song.title}
             />
           </div>
@@ -84,11 +86,6 @@ export default async function ResultPage({ params }: Props) {
           alto={satb.alto_data       as VoicePartResult}
           tenor={satb.tenor_data     as VoicePartResult}
           bass={satb.bass_data       as VoicePartResult}
-          resultId={satb.id}
-          songTitle={song.title}
-          artist={song.artist}
-          musicalKey={song.key}
-          mode={song.mode}
         />
       </div>
     </div>

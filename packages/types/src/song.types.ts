@@ -32,6 +32,7 @@ export interface SongSearchResult {
   audd_id?: string;
   spotify_url?: string;
   apple_music_url?: string;
+  preview_url?: string;
 }
 
 export interface AnalysisJob {

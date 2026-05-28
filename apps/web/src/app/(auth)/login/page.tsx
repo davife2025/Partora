@@ -8,11 +8,13 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Login" };
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { redirect?: string; error?: string };
+  searchParams: Promise<{ redirect?: string; error?: string }>;
 }) {
+  const { redirect, error } = await searchParams;
+
   return (
     <div className="glass p-8 space-y-6">
       <div>
@@ -20,15 +22,15 @@ export default function LoginPage({
         <p className="text-muted text-sm mt-1">Sign in to your Partora account</p>
       </div>
 
-      {searchParams.error && (
+      {error && (
         <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl p-3">
-          {searchParams.error}
+          {error}
         </div>
       )}
 
       <AuthForm action={loginAction}>
-        {searchParams.redirect && (
-          <input type="hidden" name="redirect" value={searchParams.redirect} />
+        {redirect && (
+          <input type="hidden" name="redirect" value={redirect} />
         )}
         <AuthInput
           label="Email"

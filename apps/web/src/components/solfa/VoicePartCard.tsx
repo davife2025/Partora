@@ -137,12 +137,19 @@ export function VoicePartCard({ result, defaultExpanded = false, className }: Vo
 /** Shows all 4 SATB cards — stacked on mobile, grid on desktop */
 export function SATBCardGrid({
   soprano, alto, tenor, bass, className,
+  resultId, songTitle, artist, musicalKey, mode, onSingComplete,
 }: {
   soprano: VoicePartResult;
   alto: VoicePartResult;
   tenor: VoicePartResult;
   bass: VoicePartResult;
   className?: string;
+  resultId?: string;
+  songTitle?: string;
+  artist?: string;
+  musicalKey?: string;
+  mode?: string;
+  onSingComplete?: () => void;
 }) {
   return (
     <div className={cn("space-y-3", className)}>

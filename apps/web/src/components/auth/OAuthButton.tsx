@@ -33,7 +33,7 @@ export function OAuthButton({ provider, action }: OAuthButtonProps) {
     <button
       type="button"
       disabled={isPending}
-      onClick={() => startTransition(() => action(provider))}
+      onClick={() => startTransition(() => { action(provider); })}
       className={cn(
         "flex items-center justify-center gap-2 rounded-xl border border-border",
         "bg-background-tertiary px-4 py-3 text-sm font-medium text-white",

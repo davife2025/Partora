@@ -63,7 +63,7 @@ export default async function ProfilePage() {
         {/* Edit profile form */}
         <Card variant="flat" padding="md" className="space-y-4">
           <p className="text-sm font-medium text-white">Edit profile</p>
-          <form action={updateProfileAction} className="space-y-4">
+          <form action={async (f) => { await updateProfileAction(f); }} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs text-muted">Full name</label>
               <input

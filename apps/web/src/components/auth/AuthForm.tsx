@@ -9,15 +9,29 @@ interface AuthFormProps {
   successRedirect?: string;
 }
 
-const initialState = { error: undefined as string | undefined, success: false, message: undefined as string | undefined };
+interface FormState {
+  error:   string | undefined;
+  success: boolean;
+  message: string | undefined;
+}
+
+const initialState: FormState = {
+  error:   undefined,
+  success: false,
+  message: undefined,
+};
 
 export function AuthForm({ children, action, successRedirect }: AuthFormProps) {
   const router = useRouter();
 
   const [state, formAction, isPending] = useActionState(
-    async (_prev: typeof initialState, formData: FormData) => {
+    async (_prev: FormState, formData: FormData): Promise<FormState> => {
       const result = await action(formData);
-      return result ?? initialState;
+      return {
+        error:   result?.error   ?? undefined,
+        success: result?.success ?? false,
+        message: result?.message ?? undefined,
+      };
     },
     initialState
   );
