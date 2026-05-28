@@ -139,7 +139,7 @@ export async function generateAllSATBAudio(satb: {
 
   return Object.fromEntries(
     results.map(({ part, buffer, timestamps }) => [part, { buffer, timestamps }])
-  ) as ReturnType<typeof generateAllSATBAudio>;
+) as Awaited<ReturnType<typeof generateAllSATBAudio>>;
 }
 
 // ─── Upload pronunciation dictionary (run once on deploy) ─────────
