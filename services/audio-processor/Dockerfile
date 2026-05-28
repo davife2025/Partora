@@ -12,15 +12,15 @@ WORKDIR /app
 # Upgrade pip and setuptools
 RUN pip install --upgrade pip "setuptools>=68" wheel
 
-# Install Python dependencies
+# Copy ALL source files first
 COPY pyproject.toml .
+COPY src/ ./src/
+
+# Install Python dependencies
 RUN pip install --no-cache-dir .
 
 # Pre-download Demucs htdemucs model weights at build time
 RUN python -c "import demucs.pretrained; demucs.pretrained.get_model('htdemucs')"
-
-# Copy source
-COPY src/ ./src/
 
 ENV ENV=production
 ENV AUDIO_PROCESSOR_PORT=5001
