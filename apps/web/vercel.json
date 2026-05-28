@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "buildCommand": "cd ../.. && npx turbo run build --filter=@partora/web --force",
+  "buildCommand": "cd ../.. && npx turbo run build --filter=@partora/web --force && find /vercel/path0/apps/web/.next/server/app -name '*.js' | head -40",
   "outputDirectory": ".next",
   "installCommand": "cd ../.. && npm install",
   "regions": ["iad1"],
