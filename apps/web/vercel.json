@@ -4,12 +4,7 @@
   "outputDirectory": "apps/web/.next",
   "installCommand": "npm install",
   "regions": ["iad1"],
-  "env": {
-    "NEXT_PUBLIC_API_URL":          "@partora-api-url",
-    "NEXT_PUBLIC_SUPABASE_URL":     "@partora-supabase-url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY":"@partora-supabase-anon-key",
-    "NEXT_PUBLIC_SITE_URL":         "@partora-site-url"
-  },
+
   "headers": [
     {
       "source": "/sw.js",
