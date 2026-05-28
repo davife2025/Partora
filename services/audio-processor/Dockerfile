@@ -9,12 +9,12 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Upgrade pip and setuptools first
-RUN pip install --upgrade pip setuptools wheel
+# Upgrade pip and setuptools
+RUN pip install --upgrade pip "setuptools>=68" wheel
 
 # Install Python dependencies
 COPY pyproject.toml .
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir .
 
 # Pre-download Demucs htdemucs model weights at build time
 RUN python -c "import demucs.pretrained; demucs.pretrained.get_model('htdemucs')"
