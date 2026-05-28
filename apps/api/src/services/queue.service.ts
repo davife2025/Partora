@@ -8,11 +8,8 @@ import { recogniseSong }                               from "./audd.service.js";
 import type { LyricsAnalysisRequest, MusicalKey, MusicalMode } from "@partora/types";
 
 // ─── Queue ─────────────────────────────────────────────────────────
-export const analysisQueue = new Bull("partora-analysis", {
-  redis: {
-    host: process.env.REDIS_HOST ?? "localhost",
-    port: parseInt(process.env.REDIS_PORT ?? "6379", 10),
-  },
+// ─── Queue ─────────────────────────────────────────────────────────
+export const analysisQueue = new Bull("partora-analysis", process.env.REDIS_URL!, {
   defaultJobOptions: {
     attempts: 3,
     backoff:  { type: "exponential", delay: 2000 },
