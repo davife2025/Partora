@@ -5,11 +5,11 @@ import { useState, useRef } from "react";
 import { Play, Pause, Sparkles, Music } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import type { SearchResult } from "@partora/types";
+import type { SongSearchResult } from "@partora/types";
 
 interface SearchResultCardProps {
-  result:      SearchResult;
-  onAnalyse:   (result: SearchResult) => void;
+  result:      SongSearchResult;
+  onAnalyse:   (result: SongSearchResult) => void;
   loading?:    boolean;
   className?:  string;
 }

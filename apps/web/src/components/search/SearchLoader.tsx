@@ -5,12 +5,12 @@ import { Music } from "lucide-react";
 import { AnalysisProgress, ProgressBar } from "@/components/layout/AnalysisProgress";
 import { WaveformVisualiser } from "@/components/audio/WaveformVisualiser";
 import type { ProgressStep } from "@/components/layout/AnalysisProgress";
-import type { SearchResult } from "@partora/types";
+import type { SongSearchResult } from "@partora/types";
 
 interface SearchLoaderProps {
   progress: number;
   step:     string;
-  song:     SearchResult | null;
+  song:     SongSearchResult | null;
 }
 
 function buildSteps(progress: number): ProgressStep[] {
