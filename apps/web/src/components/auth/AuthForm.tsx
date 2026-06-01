@@ -3,20 +3,26 @@
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+type FormState = {
+  error?:   string;
+  success?: boolean;
+  message?: string;
+};
+
 interface AuthFormProps {
-  children:        React.ReactNode;
-  action:          (fd: FormData) => Promise<{ error?: string; success?: boolean; message?: string } | void>;
+  children:         React.ReactNode;
+  action:           (fd: FormData) => Promise<FormState | void>;
   successRedirect?: string;
 }
 
-const initial = { error: undefined as string | undefined, success: false, message: undefined as string | undefined };
+const initial: FormState = {};
 
 export function AuthForm({ children, action, successRedirect }: AuthFormProps) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(
-    async (_prev: typeof initial, fd: FormData) => {
+    async (_prev: FormState, fd: FormData): Promise<FormState> => {
       const result = await action(fd);
-      return result ?? initial;
+      return result ?? {};
     },
     initial
   );

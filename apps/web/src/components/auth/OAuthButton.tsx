@@ -30,7 +30,7 @@ export function OAuthButton({ provider, action }: OAuthButtonProps) {
     <button
       type="button"
       disabled={pending}
-      onClick={() => start(() => action(provider))}
+      onClick={() => start(() => { action(provider); })}
       className={cn(
         "flex items-center justify-center gap-2 rounded-2xl border border-white/8",
         "bg-white/5 px-4 py-3 text-sm font-medium text-white",
