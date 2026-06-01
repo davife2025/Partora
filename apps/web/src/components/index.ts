@@ -13,7 +13,7 @@ export { AnalysisProgress, ProgressBar } from "./layout/AnalysisProgress";
 export { BottomNav } from "./layout/BottomNav";
 
 // Audio
-export { WaveformVisualiser, StaticWaveform } from "./audio/WaveformVisualiser";
+export { WaveformVisualiser } from "./audio/WaveformVisualiser";
 export { AudioPlayer } from "./audio/AudioPlayer";
 
 // Solfa
