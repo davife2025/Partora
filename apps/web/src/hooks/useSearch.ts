@@ -2,11 +2,11 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
-import type { SearchResult } from "@partora/types";
+import type { SongSearchResult } from "@partora/types";
 
 interface UseSearchReturn {
   query:    string;
-  results:  SearchResult[];
+  results:  SongSearchResult[];
   loading:  boolean;
   error:    string | null;
   setQuery: (q: string) => void;
@@ -18,7 +18,7 @@ const MIN_CHARS   = 2;
 
 export function useSearch(): UseSearchReturn {
   const [query,   setQueryState] = useState("");
-  const [results, setResults]    = useState<SearchResult[]>([]);
+  const [results, setResults]    = useState<SongSearchResult[]>([]);
   const [loading, setLoading]    = useState(false);
   const [error,   setError]      = useState<string | null>(null);
   const timerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -39,7 +39,7 @@ export function useSearch(): UseSearchReturn {
     setError(null);
 
     try {
-      const res = await api.get<{ results: SearchResult[] }>(
+      const res = await api.get<{ results: SongSearchResult[] }>(
         `/api/search?q=${encodeURIComponent(q)}`
       );
 
