@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 interface OAuthButtonProps {
   provider: "google" | "apple";
-  action: (provider: "google" | "apple") => Promise<{ error?: string } | void>;
+  action:   (provider: "google" | "apple") => Promise<{ error?: string } | void>;
 }
 
 const ICONS = {
@@ -24,26 +24,23 @@ const ICONS = {
   ),
 };
 
-const LABELS = { google: "Google", apple: "Apple" };
-
 export function OAuthButton({ provider, action }: OAuthButtonProps) {
-  const [isPending, startTransition] = useTransition();
-
+  const [pending, start] = useTransition();
   return (
     <button
       type="button"
-      disabled={isPending}
-      onClick={() => startTransition(() => { action(provider); })}
+      disabled={pending}
+      onClick={() => start(() => action(provider))}
       className={cn(
-        "flex items-center justify-center gap-2 rounded-xl border border-border",
-        "bg-background-tertiary px-4 py-3 text-sm font-medium text-white",
-        "hover:bg-background-secondary transition-all duration-150",
+        "flex items-center justify-center gap-2 rounded-2xl border border-white/8",
+        "bg-white/5 px-4 py-3 text-sm font-medium text-white",
+        "hover:bg-white/8 transition-all duration-150 active:scale-95",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         provider === "apple" && "bg-black border-black hover:bg-black/80"
       )}
     >
       {ICONS[provider]}
-      {LABELS[provider]}
+      {provider === "google" ? "Google" : "Apple"}
     </button>
   );
 }

@@ -1,118 +1,70 @@
 "use client";
-
 import { useState } from "react";
-import { Textarea, Input, Select } from "@/components/ui/FormFields";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Music2 } from "lucide-react";
 import type { MusicalKey, MusicalMode, LyricsAnalysisRequest } from "@partora/types";
 
-const KEY_OPTIONS: { value: string; label: string }[] = [
-  { value: "",    label: "Select key…" },
-  ...["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"].map((k) => ({ value: k, label: k })),
-  ...(["Db","Eb","Gb","Ab","Bb"].map((k) => ({ value: k, label: `${k} (enharmonic)` }))),
-];
+const KEYS = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 
-const MODE_OPTIONS = [
-  { value: "major", label: "Major" },
-  { value: "minor", label: "Minor" },
-];
+export function LyricsForm({ onSubmit }: { onSubmit: (d: LyricsAnalysisRequest & { title?:string; artist?:string }) => void }) {
+  const [lyrics, setLyrics]   = useState("");
+  const [key,    setKey]       = useState<MusicalKey|"">("");
+  const [mode,   setMode]      = useState<MusicalMode>("major");
+  const [title,  setTitle]     = useState("");
+  const [artist, setArtist]    = useState("");
+  const [errors, setErrors]    = useState<Record<string,string>>({});
 
-interface LyricsFormProps {
-  onSubmit: (data: LyricsAnalysisRequest & { title?: string; artist?: string }) => void;
-  loading?: boolean;
-}
-
-export function LyricsForm({ onSubmit, loading }: LyricsFormProps) {
-  const [lyrics,  setLyrics]  = useState("");
-  const [key,     setKey]     = useState<MusicalKey | "">("");
-  const [mode,    setMode]    = useState<MusicalMode>("major");
-  const [title,   setTitle]   = useState("");
-  const [artist,  setArtist]  = useState("");
-  const [errors,  setErrors]  = useState<Record<string, string>>({});
-
-  function validate() {
-    const e: Record<string, string> = {};
-    if (lyrics.trim().length < 10) e.lyrics = "Please enter at least 10 characters of lyrics";
-    if (!key)                        e.key    = "Please select the musical key";
-    return e;
-  }
-
-  function handleSubmit(e: React.FormEvent) {
+  function submit(e: React.FormEvent) {
     e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    const errs: Record<string,string> = {};
+    if (lyrics.trim().length < 10) errs.lyrics = "Please enter at least 10 characters";
+    if (!key) errs.key = "Please select a key";
+    if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
-    onSubmit({ lyrics: lyrics.trim(), key: key as MusicalKey, mode, title: title || undefined, artist: artist || undefined });
+    onSubmit({ lyrics: lyrics.trim(), key: key as MusicalKey, mode, title: title||undefined, artist: artist||undefined });
   }
+
+  const inputCls = "w-full rounded-2xl border bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none transition-all";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Song info (optional) */}
-      <Card variant="flat" padding="md">
-        <p className="text-xs text-muted uppercase tracking-wider font-medium mb-3">
-          Song info <span className="normal-case font-normal">(optional)</span>
-        </p>
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            name="title"
-            placeholder="Song title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <Input
-            name="artist"
-            placeholder="Artist"
-            value={artist}
-            onChange={(e) => setArtist(e.target.value)}
-          />
-        </div>
-      </Card>
-
-      {/* Key + Mode */}
+    <form onSubmit={submit} className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <Select
-          label="Musical key"
-          name="key"
-          options={KEY_OPTIONS}
-          value={key}
-          onChange={(e) => setKey(e.target.value as MusicalKey)}
-          error={errors.key}
-        />
-        <Select
-          label="Mode"
-          name="mode"
-          options={MODE_OPTIONS}
-          value={mode}
-          onChange={(e) => setMode(e.target.value as MusicalMode)}
-        />
+        <input value={title}  onChange={e=>setTitle(e.target.value)}  placeholder="Song title (optional)"  className={`${inputCls} border-white/8 focus:border-[#7F77DD]/50`}/>
+        <input value={artist} onChange={e=>setArtist(e.target.value)} placeholder="Artist (optional)"      className={`${inputCls} border-white/8 focus:border-[#7F77DD]/50`}/>
       </div>
 
-      {/* Lyrics */}
-      <Textarea
-        label="Lyrics"
-        name="lyrics"
-        placeholder={"Paste your song lyrics here…\n\nVerse 1:\nAmazing grace how sweet the sound…"}
-        rows={10}
-        value={lyrics}
-        onChange={(e) => setLyrics(e.target.value)}
-        error={errors.lyrics}
-        hint={`${lyrics.length} characters · ${lyrics.split(/\s+/).filter(Boolean).length} words`}
-      />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <select value={key} onChange={e=>setKey(e.target.value as MusicalKey)}
+            className={`${inputCls} ${errors.key?"border-red-500/50":"border-white/8 focus:border-[#7F77DD]/50"}`}>
+            <option value="" className="bg-[#13131E]">Select key…</option>
+            {KEYS.map(k => <option key={k} value={k} className="bg-[#13131E]">{k}</option>)}
+          </select>
+          {errors.key && <p className="text-xs text-red-400 mt-1">{errors.key}</p>}
+        </div>
+        <div className="flex rounded-2xl border border-white/8 overflow-hidden">
+          {(["major","minor"] as MusicalMode[]).map(m => (
+            <button key={m} type="button" onClick={()=>setMode(m)}
+              className={`flex-1 py-3 text-sm font-medium capitalize transition-all
+                ${mode===m ? "bg-[#7F77DD]/20 text-[#7F77DD]" : "text-white/30 hover:text-white"}`}>
+              {m}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      {/* Tips */}
-      <Card variant="flat" padding="sm" className="text-xs text-muted space-y-1">
-        <p className="flex items-center gap-1.5">
-          <Music2 className="h-3 w-3 shrink-0" /> Label verse/chorus sections for better harmonisation
-        </p>
-        <p className="flex items-center gap-1.5">
-          <Music2 className="h-3 w-3 shrink-0" /> Include all repeated sections even if identical
-        </p>
-      </Card>
+      <div>
+        <textarea value={lyrics} onChange={e=>setLyrics(e.target.value)} rows={8}
+          placeholder={"Paste your song lyrics here…\n\nVerse 1:\nAmazing grace how sweet the sound…"}
+          className={`${inputCls} resize-none ${errors.lyrics?"border-red-500/50":"border-white/8 focus:border-[#7F77DD]/50"}`}/>
+        <div className="flex justify-between mt-1">
+          {errors.lyrics ? <p className="text-xs text-red-400">{errors.lyrics}</p> : <span/>}
+          <p className="text-xs text-white/20">{lyrics.length} chars</p>
+        </div>
+      </div>
 
-      <Button type="submit" fullWidth loading={loading} size="lg">
+      <button type="submit"
+        className="w-full py-4 rounded-2xl bg-[#7F77DD] text-white font-semibold text-sm hover:bg-[#6B63CC] transition-all active:scale-[0.98]">
         Generate SATB Parts
-      </Button>
+      </button>
     </form>
   );
 }

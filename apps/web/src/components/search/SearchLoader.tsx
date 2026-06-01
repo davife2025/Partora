@@ -5,34 +5,35 @@ import { Music } from "lucide-react";
 import { AnalysisProgress, ProgressBar } from "@/components/layout/AnalysisProgress";
 import { StaticWaveform } from "@/components/audio/WaveformVisualiser";
 import type { ProgressStep } from "@/components/layout/AnalysisProgress";
-import type { SongSearchResult } from "@partora/types";
+import type { SearchResult } from "@partora/types";
 
 interface SearchLoaderProps {
   progress: number;
   step:     string;
-  song:     SongSearchResult | null;
+  song:     SearchResult | null;
 }
 
 function buildSteps(progress: number): ProgressStep[] {
   const steps = [
-    { id: "key",     label: "Inferring musical key",         threshold: 10 },
-    { id: "song",    label: "Saving song details",           threshold: 25 },
-    { id: "harmony", label: "Generating SATB harmonisation", threshold: 30 },
-    { id: "tts",     label: "Generating voice audio",        threshold: 60 },
-    { id: "storage", label: "Storing results",               threshold: 85 },
+    { id: "key",     label: "Inferring musical key",          threshold: 10 },
+    { id: "song",    label: "Saving song details",            threshold: 25 },
+    { id: "harmony", label: "Generating SATB harmonisation",  threshold: 30 },
+    { id: "tts",     label: "Generating voice audio",         threshold: 60 },
+    { id: "storage", label: "Storing results",                threshold: 85 },
   ];
 
   return steps.map((s, i) => {
     const prev = steps[i - 1];
-    if (progress >= s.threshold)            return { ...s, status: "done"    as const };
-    if (progress >= (prev?.threshold ?? 0)) return { ...s, status: "active"  as const };
-    return                                         { ...s, status: "pending" as const };
+    if (progress >= s.threshold)              return { ...s, status: "done" as const };
+    if (progress >= (prev?.threshold ?? 0))   return { ...s, status: "active" as const };
+    return { ...s, status: "pending" as const };
   });
 }
 
 export function SearchLoader({ progress, step, song }: SearchLoaderProps) {
   return (
     <div className="space-y-6 py-4">
+      {/* Song being analysed */}
       {song && (
         <div className="flex items-center gap-3 p-3 rounded-xl bg-background-tertiary border border-border">
           <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-background-secondary">
@@ -48,9 +49,10 @@ export function SearchLoader({ progress, step, song }: SearchLoaderProps) {
         </div>
       )}
 
+      {/* Waveform animation */}
       <div className="flex justify-center py-2">
         <div className="flex items-end gap-1 h-10">
-          {(["soprano", "alto", "tenor", "bass"] as const).map((part) => (
+          {(["soprano","alto","tenor","bass"] as const).map((part) => (
             <StaticWaveform key={part} voicePart={part} active barCount={5} />
           ))}
         </div>

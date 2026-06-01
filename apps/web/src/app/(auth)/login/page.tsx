@@ -1,79 +1,65 @@
-import Link from "next/link";
+import Link       from "next/link";
 import { loginAction, oAuthAction } from "@/app/actions/auth.actions";
-import { AuthForm } from "@/components/auth/AuthForm";
-import { AuthInput } from "@/components/auth/AuthInput";
+import { AuthForm }   from "@/components/auth/AuthForm";
+import { AuthInput }  from "@/components/auth/AuthInput";
 import { AuthButton } from "@/components/auth/AuthButton";
 import { OAuthButton } from "@/components/auth/OAuthButton";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Login" };
+export const metadata: Metadata = { title: "Sign in" };
 
-export default async function LoginPage({
+export default function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirect?: string; error?: string }>;
+  searchParams: { redirect?: string; error?: string; message?: string };
 }) {
-  const { redirect, error } = await searchParams;
-
   return (
-    <div className="glass p-8 space-y-6">
+    <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-white">Welcome back</h2>
-        <p className="text-muted text-sm mt-1">Sign in to your Partora account</p>
+        <h2 className="text-xl font-bold text-white">Welcome back</h2>
+        <p className="text-sm text-white/40 mt-1">Sign in to your Partora account</p>
       </div>
 
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-xl p-3">
-          {error}
+      {searchParams.error && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-2xl p-4">
+          {searchParams.error}
+        </div>
+      )}
+      {searchParams.message && (
+        <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-sm rounded-2xl p-4">
+          {searchParams.message}
         </div>
       )}
 
       <AuthForm action={loginAction}>
-        {redirect && (
-          <input type="hidden" name="redirect" value={redirect} />
+        {searchParams.redirect && (
+          <input type="hidden" name="redirect" value={searchParams.redirect} />
         )}
-        <AuthInput
-          label="Email"
-          name="email"
-          type="email"
-          placeholder="you@example.com"
-          required
-          autoComplete="email"
-        />
-        <AuthInput
-          label="Password"
-          name="password"
-          type="password"
-          placeholder="••••••••"
-          required
-          autoComplete="current-password"
-        />
-        <div className="flex justify-end -mt-2">
-          <Link href="/forgot-password" className="text-xs text-muted hover:text-white transition-colors">
+        <AuthInput label="Email"    name="email"    type="email"    placeholder="you@example.com"  autoComplete="email"            required />
+        <AuthInput label="Password" name="password" type="password" placeholder="••••••••"          autoComplete="current-password" required />
+        <div className="flex justify-end -mt-1">
+          <Link href="/forgot-password" className="text-xs text-white/30 hover:text-white transition-colors">
             Forgot password?
           </Link>
         </div>
         <AuthButton>Sign in</AuthButton>
       </AuthForm>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative text-center">
-          <span className="bg-background-secondary px-3 text-xs text-muted">or continue with</span>
-        </div>
+      <div className="relative flex items-center">
+        <div className="flex-1 border-t border-white/8" />
+        <span className="mx-3 text-xs text-white/25 bg-[#0D0D14] px-1">or</span>
+        <div className="flex-1 border-t border-white/8" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <OAuthButton provider="google" action={oAuthAction} />
-        <OAuthButton provider="apple" action={oAuthAction} />
+        <OAuthButton provider="apple"  action={oAuthAction} />
       </div>
 
-      <p className="text-center text-sm text-muted">
-        Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-soprano hover:text-soprano/80 transition-colors font-medium">
-          Sign up
+      <p className="text-center text-sm text-white/30">
+        No account?{" "}
+        <Link href="/register" className="text-[#7F77DD] hover:text-[#9B95E8] font-semibold transition-colors">
+          Sign up free
         </Link>
       </p>
     </div>

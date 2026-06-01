@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
-import type { SongSearchResult, JobStatusResponse } from "@partora/types";
+import type { SearchResult, JobStatusResponse } from "@partora/types";
 
 type Status = "idle" | "pending" | "processing" | "complete" | "failed";
 
@@ -13,7 +13,7 @@ interface State {
   step:     string;
   result:   JobStatusResponse["result"] | null;
   error:    string | null;
-  song:     SongSearchResult | null;
+  song:     SearchResult | null;
 }
 
 const INITIAL: State = {
@@ -55,7 +55,7 @@ export function useSearchAnalysis() {
     }, 2000);
   }, [stopPolling]);
 
-  const analyseSong = useCallback(async (song: SongSearchResult) => {
+  const analyseSong = useCallback(async (song: SearchResult) => {
     setState({ ...INITIAL, status: "pending", step: "Submitting…", song });
     const res = await api.post<{ job_id: string }>(
       "/api/search/analyse",

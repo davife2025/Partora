@@ -5,13 +5,13 @@ import { useState, useRef } from "react";
 import { Play, Pause, Sparkles, Music } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import type { SongSearchResult } from "@partora/types";
+import type { SearchResult } from "@partora/types";
 
 interface SearchResultCardProps {
-  result:     SongSearchResult;
-  onAnalyse:  (result: SongSearchResult) => void;
-  loading?:   boolean;
-  className?: string;
+  result:      SearchResult;
+  onAnalyse:   (result: SearchResult) => void;
+  loading?:    boolean;
+  className?:  string;
 }
 
 export function SearchResultCard({
@@ -33,6 +33,7 @@ export function SearchResultCard({
       audioRef.current.pause();
       setPlaying(false);
     } else {
+      // Stop all other previews
       document.querySelectorAll("audio").forEach((a) => a.pause());
       audioRef.current.currentTime = 0;
       audioRef.current.play();
@@ -69,6 +70,7 @@ export function SearchResultCard({
           </div>
         )}
 
+        {/* Preview play button overlay */}
         {result.preview_url && (
           <button
             onClick={togglePreview}

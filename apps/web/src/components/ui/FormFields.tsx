@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 // ─── Input ────────────────────────────────────────────────────────
-interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "prefix" | "suffix"> {
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   hint?: string;
   error?: string;
@@ -47,7 +47,7 @@ export function Input({ label, hint, error, prefix, suffix, className, id, ...pr
   );
 }
 
-// ─── Textarea ────────────────────────────────────────────────────────
+// ─── Textarea ─────────────────────────────────────────────────────
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   hint?: string;
@@ -82,7 +82,7 @@ export function Textarea({ label, hint, error, className, id, ...props }: Textar
   );
 }
 
-// ─── Select ────────────────────────────────────────────────────────
+// ─── Select ───────────────────────────────────────────────────────
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   hint?: string;

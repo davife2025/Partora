@@ -1,15 +1,20 @@
 {
   "framework": "nextjs",
-  "buildCommand": "cd ../.. && npx turbo run build --filter=@partora/web --force && find /vercel/path0/apps/web/.next/server/app -name '*.js' | head -40",
-  "outputDirectory": ".next",
-  "installCommand": "cd ../.. && npm install",
+  "buildCommand": "cd ../.. && npx turbo run build --filter=@partora/web",
+  "outputDirectory": "apps/web/.next",
+  "installCommand": "npm install",
   "regions": ["iad1"],
-
+  "env": {
+    "NEXT_PUBLIC_API_URL":          "@partora-api-url",
+    "NEXT_PUBLIC_SUPABASE_URL":     "@partora-supabase-url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY":"@partora-supabase-anon-key",
+    "NEXT_PUBLIC_SITE_URL":         "@partora-site-url"
+  },
   "headers": [
     {
       "source": "/sw.js",
       "headers": [
-        { "key": "Cache-Control",          "value": "public, max-age=0, must-revalidate" },
+        { "key": "Cache-Control",       "value": "public, max-age=0, must-revalidate" },
         { "key": "Service-Worker-Allowed", "value": "/" }
       ]
     }

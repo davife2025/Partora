@@ -59,7 +59,7 @@ export function setupCoachWebSocket(server: Server) {
     });
   });
 
-  wss.on("connection", (ws: WebSocket, _req: any, userId: string, params: URLSearchParams) => {
+  wss.on("connection", (ws: WebSocket, _req, userId: string, params: URLSearchParams) => {
     // Parse optional context from query params
     const context: CoachContext = {
       voicePart: (params.get("voice_part") ?? undefined) as VoicePart | undefined,

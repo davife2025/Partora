@@ -55,10 +55,8 @@ export async function saveToLibrary(req: AuthenticatedRequest, res: Response, ne
 
 export async function removeFromLibrary(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-const { id } = req.params;
-const songId = Array.isArray(id) ? id[0] : id;
-if (!songId) throw new Error("Missing song id");
-const result = await userService.deleteSong(req.userId!, songId);
+    const { song_id } = req.params;
+    const result = await userService.removeFromLibrary(req.userId!, song_id);
     res.json({ success: true, data: result });
   } catch (e) { next(e); }
 }
@@ -85,8 +83,7 @@ export async function deleteSong(req: AuthenticatedRequest, res: Response, next:
       await supabaseAdmin.storage.from("audio-outputs").remove(paths);
     }
 
-  const songId = Array.isArray(id) ? id[0] : id;
-const result = await userService.deleteSong(req.userId!, songId);
+    const result = await userService.deleteSong(req.userId!, id);
     res.json({ success: true, data: result });
   } catch (e) { next(e); }
 }

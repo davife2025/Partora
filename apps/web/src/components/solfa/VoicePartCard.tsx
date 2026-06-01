@@ -1,132 +1,116 @@
 "use client";
-
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Music2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ChevronDown, ChevronUp, Music2, MessageCircle } from "lucide-react";
 import { AudioPlayer } from "@/components/audio/AudioPlayer";
-import { SolfaDisplay, SolfaText } from "./SolfaDisplay";
-import { Badge } from "@/components/ui/index";
+import { useRouter }   from "next/navigation";
 import type { VoicePart, VoicePartResult } from "@partora/types";
 
-const PART_META: Record<VoicePart, { label: string; emoji: string; range: string; cardClass: string; badgeVariant: "soprano" | "alto" | "tenor" | "bass" }> = {
-  soprano: { label: "Soprano", emoji: "🎶", range: "C4–A5", cardClass: "bg-voice-soprano border-soprano/30", badgeVariant: "soprano" },
-  alto:    { label: "Alto",    emoji: "🎵", range: "G3–E5", cardClass: "bg-voice-alto border-alto/30",       badgeVariant: "alto" },
-  tenor:   { label: "Tenor",   emoji: "🎤", range: "C3–A4", cardClass: "bg-voice-tenor border-tenor/30",     badgeVariant: "tenor" },
-  bass:    { label: "Bass",    emoji: "🎸", range: "E2–E4", cardClass: "bg-voice-bass border-bass/30",       badgeVariant: "bass" },
+const PARTS: Record<VoicePart,{label:string;emoji:string;range:string;color:string;bg:string;border:string}> = {
+  soprano:{label:"Soprano",emoji:"🎶",range:"C4–A5",color:"#7F77DD",bg:"rgba(127,119,221,0.08)",border:"rgba(127,119,221,0.2)"},
+  alto:   {label:"Alto",   emoji:"🎵",range:"G3–E5",color:"#2DA882",bg:"rgba(45,168,130,0.08)",  border:"rgba(45,168,130,0.2)"},
+  tenor:  {label:"Tenor",  emoji:"🎤",range:"C3–A4",color:"#D4820A",bg:"rgba(212,130,10,0.08)",  border:"rgba(212,130,10,0.2)"},
+  bass:   {label:"Bass",   emoji:"🎸",range:"E2–E4",color:"#185FA5",bg:"rgba(24,95,165,0.08)",   border:"rgba(24,95,165,0.2)"},
 };
 
 interface VoicePartCardProps {
-  result: VoicePartResult;
+  result:          VoicePartResult;
+  resultId?:       string;
+  songTitle?:      string;
+  artist?:         string;
+  musicalKey?:     string;
+  mode?:           string;
   defaultExpanded?: boolean;
-  className?: string;
 }
 
-export function VoicePartCard({ result, defaultExpanded = false, className }: VoicePartCardProps) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
-  const meta = PART_META[result.part];
+export function VoicePartCard({ result, resultId, songTitle, artist, musicalKey, mode, defaultExpanded=false }: VoicePartCardProps) {
+  const [open, setOpen] = useState(defaultExpanded);
+  const router = useRouter();
+  const m = PARTS[result.part];
+
+  function goToCoach() {
+    const p = new URLSearchParams();
+    if (result.part) p.set("voice_part", result.part);
+    if (songTitle) p.set("song_title", songTitle);
+    if (artist)    p.set("artist", artist);
+    if (musicalKey) p.set("key", musicalKey);
+    if (mode)      p.set("mode", mode);
+    router.push(`/coach?${p.toString()}`);
+  }
+
+  const syllables = result.solfa_text?.split(" ").filter(Boolean) ?? [];
 
   return (
-    <div
-      className={cn(
-        "rounded-2xl border transition-all duration-200",
-        meta.cardClass,
-        className
-      )}
-    >
-      {/* Header — always visible */}
-      <button
-        className="w-full flex items-center gap-3 p-4 text-left"
-        onClick={() => setExpanded((e) => !e)}
-        aria-expanded={expanded}
-      >
-        <span className="text-2xl">{meta.emoji}</span>
+    <div className="rounded-2xl border overflow-hidden" style={{borderColor:m.border,background:m.bg}}>
+      <button className="w-full flex items-center gap-3 p-4 text-left" onClick={()=>setOpen(o=>!o)}>
+        <span className="text-2xl">{m.emoji}</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-white">{meta.label}</span>
-            <Badge variant={meta.badgeVariant}>{meta.range}</Badge>
+            <span className="font-semibold text-white">{m.label}</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full border font-medium"
+                  style={{color:m.color,borderColor:m.color+"40",background:m.color+"15"}}>{m.range}</span>
           </div>
-          {/* Collapsed preview — first 5 solfa syllables */}
-          {!expanded && (
-            <p className="text-xs text-muted mt-0.5 truncate">
-              {result.solfa_text.split(" ").slice(0, 5).join(" ")}…
-            </p>
-          )}
+          {!open && <p className="text-xs mt-0.5 truncate" style={{color:m.color+"80"}}>{syllables.slice(0,6).join(" ")}…</p>}
         </div>
-        <span className="text-muted shrink-0">
-          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </span>
+        <span style={{color:m.color+"60"}}>{open ? <ChevronUp className="h-4 w-4"/> : <ChevronDown className="h-4 w-4"/>}</span>
       </button>
 
-      {/* Expanded content */}
-      {expanded && (
-        <div className="px-4 pb-5 space-y-4 border-t border-white/10 pt-4">
+      {open && (
+        <div className="px-4 pb-5 space-y-4 border-t" style={{borderColor:m.border}}>
 
-          {/* Solfa notation */}
+          {/* Solfa pills */}
           <div>
-            <p className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
-              Tonic Solfa
-            </p>
-            {result.solfa_notes.length > 0 ? (
-              <SolfaDisplay notes={result.solfa_notes} voicePart={result.part} showLyrics />
-            ) : (
-              <SolfaText text={result.solfa_text} voicePart={result.part} />
-            )}
+            <p className="text-[10px] font-semibold uppercase tracking-wider mt-3 mb-2" style={{color:m.color+"80"}}>Tonic Solfa</p>
+            <div className="flex flex-wrap gap-1.5">
+              {syllables.map((s,i) => (
+                <span key={i} className="text-xs px-2.5 py-1 rounded-full font-semibold border"
+                      style={{color:m.color,borderColor:m.color+"40",background:m.color+"15"}}>
+                  {s}
+                </span>
+              ))}
+            </div>
           </div>
 
-          {/* TTS audio — spoken solfa */}
+          {/* Spoken solfa audio */}
           {result.tts_audio_url && (
             <div>
-              <p className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2 flex items-center gap-1">
-                <Music2 className="h-3 w-3" /> Spoken Solfa
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1" style={{color:m.color+"80"}}>
+                <Music2 className="h-3 w-3"/> Spoken Solfa
               </p>
-              <AudioPlayer
-                src={result.tts_audio_url}
-                voicePart={result.part}
-                timestamps={result.timestamps}
-                solfaText={result.solfa_text}
-                downloadFilename={`partora-${result.part}-solfa.mp3`}
-              />
+              <AudioPlayer src={result.tts_audio_url} voicePart={result.part}
+                timestamps={result.timestamps} solfaText={result.solfa_text}
+                downloadFilename={`partora-${result.part}-solfa.mp3`}/>
             </div>
           )}
 
-          {/* Sung audio — pitched singing */}
+          {/* Sung audio */}
           {result.sung_audio_url && (
             <div>
-              <p className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2 flex items-center gap-1">
-                🎙️ Sung Demonstration
-              </p>
-              <AudioPlayer
-                src={result.sung_audio_url}
-                voicePart={result.part}
-                downloadFilename={`partora-${result.part}-sung.mp3`}
-              />
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{color:m.color+"80"}}>🎙️ Sung Demo</p>
+              <AudioPlayer src={result.sung_audio_url} voicePart={result.part}
+                downloadFilename={`partora-${result.part}-sung.mp3`}/>
             </div>
           )}
 
-          {/* Backing track */}
+          {/* Backing */}
           {result.backing_audio_url && (
             <div>
-              <p className="text-xs font-medium text-white/60 uppercase tracking-wider mb-2">
-                🎹 Backing Track
-              </p>
-              <AudioPlayer
-                src={result.backing_audio_url}
-                voicePart={result.part}
-                downloadFilename={`partora-${result.part}-backing.mp3`}
-              />
+              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{color:m.color+"80"}}>🎹 Backing Track</p>
+              <AudioPlayer src={result.backing_audio_url} voicePart={result.part}
+                downloadFilename={`partora-${result.part}-backing.mp3`}/>
             </div>
           )}
 
-          {/* Note range */}
-          <div className="flex gap-4 pt-1">
-            <div>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">Low</p>
-              <p className="text-sm font-mono text-white">{result.range.low}</p>
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex gap-4 text-xs">
+              <div><p className="text-white/20 text-[9px] uppercase">Low</p><p className="font-mono text-white">{result.range.low}</p></div>
+              <div><p className="text-white/20 text-[9px] uppercase">High</p><p className="font-mono text-white">{result.range.high}</p></div>
             </div>
-            <div>
-              <p className="text-[10px] text-white/40 uppercase tracking-wider">High</p>
-              <p className="text-sm font-mono text-white">{result.range.high}</p>
-            </div>
+            <button onClick={goToCoach}
+              className="flex items-center gap-1.5 text-xs border rounded-xl px-3 py-1.5 transition-all"
+              style={{color:m.color,borderColor:m.color+"30",background:m.color+"08"}}>
+              <MessageCircle className="h-3 w-3"/> Ask Coach
+            </button>
           </div>
         </div>
       )}
@@ -134,27 +118,16 @@ export function VoicePartCard({ result, defaultExpanded = false, className }: Vo
   );
 }
 
-/** Shows all 4 SATB cards — stacked on mobile, grid on desktop */
-export function SATBCardGrid({
-  soprano, alto, tenor, bass, className,
-  resultId, songTitle, artist, musicalKey, mode, onSingComplete,
-}: {
-  soprano: VoicePartResult;
-  alto: VoicePartResult;
-  tenor: VoicePartResult;
-  bass: VoicePartResult;
-  className?: string;
-  resultId?: string;
-  songTitle?: string;
-  artist?: string;
-  musicalKey?: string;
-  mode?: string;
-  onSingComplete?: () => void;
+export function SATBCardGrid({ soprano,alto,tenor,bass,resultId,songTitle,artist,musicalKey,mode,onSingComplete }:{
+  soprano:VoicePartResult; alto:VoicePartResult; tenor:VoicePartResult; bass:VoicePartResult;
+  resultId?:string; songTitle?:string; artist?:string; musicalKey?:string; mode?:string; onSingComplete?:()=>void;
 }) {
   return (
-    <div className={cn("space-y-3", className)}>
-      {[soprano, alto, tenor, bass].map((result, i) => (
-        <VoicePartCard key={result.part} result={result} defaultExpanded={i === 0} />
+    <div className="space-y-3">
+      {[soprano,alto,tenor,bass].map((r,i) => (
+        <VoicePartCard key={r.part} result={r} resultId={resultId}
+          songTitle={songTitle} artist={artist} musicalKey={musicalKey} mode={mode}
+          defaultExpanded={i===0}/>
       ))}
     </div>
   );
