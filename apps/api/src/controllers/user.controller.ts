@@ -13,7 +13,7 @@ export async function getProfile(req: AuthenticatedRequest, res: Response, next:
 
 export async function updateProfile(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const { full_name, preferred_voice_part, avatar_url } = req.body as Record<string, string>;
+    const { full_name, preferred_voice_part, avatar_url } = req.body as Record<string,string>;
     const profile = await userService.updateProfile(req.userId!, {
       full_name,
       preferred_voice_part: preferred_voice_part as never,
@@ -25,13 +25,9 @@ export async function updateProfile(req: AuthenticatedRequest, res: Response, ne
 
 export async function getHistory(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const limit  = Math.min(parseInt((req.query.limit  as string) ?? "20", 10), 50);
-    const offset = parseInt((req.query.offset as string) ?? "0", 10);
-
-    // Use the SQL helper function for efficient joined query
-    const { data, error } = await supabaseAdmin
-      .rpc("get_my_history", { lim: limit, off: offset });
-
+    const limit  = Math.min(parseInt(String(req.query.limit  ?? "20"), 10), 50);
+    const offset = parseInt(String(req.query.offset ?? "0"), 10);
+    const { data, error } = await supabaseAdmin.rpc("get_my_history", { lim: limit, off: offset });
     if (error) throw new AppError("Failed to fetch history", 500);
     res.json({ success: true, data: data ?? [] });
   } catch (e) { next(e); }
@@ -55,30 +51,25 @@ export async function saveToLibrary(req: AuthenticatedRequest, res: Response, ne
 
 export async function removeFromLibrary(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const { song_id } = req.params;
-    const result = await userService.removeFromLibrary(req.userId!, song_id);
+    const song_id = req.params["song_id"] as string;
+    const result  = await userService.removeFromLibrary(req.userId!, song_id);
     res.json({ success: true, data: result });
   } catch (e) { next(e); }
 }
 
 export async function deleteSong(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = (req.params["id"] ?? req.params["song_id"]) as string;
 
-    // Delete audio files from storage first
     const { data: satb } = await supabaseAdmin
-      .from("satb_results")
-      .select("song_id")
-      .eq("song_id", id)
-      .eq("user_id", req.userId!)
-      .single();
+      .from("satb_results").select("song_id").eq("song_id", id).eq("user_id", req.userId!).single();
 
     if (satb) {
-      const parts = ["soprano", "alto", "tenor", "bass"];
+      const parts = ["soprano","alto","tenor","bass"];
       const paths = [
-        ...parts.map((p) => `${req.userId!}/${id}/${p}-solfa.mp3`),
-        ...parts.map((p) => `${req.userId!}/${id}/${p}-sung.mp3`),
-        ...parts.map((p) => `${req.userId!}/${id}/${p}-backing.mp3`),
+        ...parts.map(p => `${req.userId!}/${id}/${p}-solfa.mp3`),
+        ...parts.map(p => `${req.userId!}/${id}/${p}-sung.mp3`),
+        ...parts.map(p => `${req.userId!}/${id}/${p}-backing.mp3`),
       ];
       await supabaseAdmin.storage.from("audio-outputs").remove(paths);
     }
@@ -91,32 +82,17 @@ export async function deleteSong(req: AuthenticatedRequest, res: Response, next:
 export async function getStats(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
     const { data: songs } = await supabaseAdmin
-      .from("songs")
-      .select("source, key, mode")
-      .eq("user_id", req.userId!);
-
+      .from("songs").select("source,key,mode").eq("user_id", req.userId!);
     if (!songs) { res.json({ success: true, data: {} }); return; }
 
-    const bySource: Record<string, number> = {};
-    const byKey:    Record<string, number> = {};
-
-    songs.forEach((s) => {
+    const bySource: Record<string,number> = {};
+    const byKey:    Record<string,number> = {};
+    songs.forEach(s => {
       bySource[s.source] = (bySource[s.source] ?? 0) + 1;
       const k = `${s.key} ${s.mode}`;
       byKey[k] = (byKey[k] ?? 0) + 1;
     });
-
-    // Most common key
-    const topKey = Object.entries(byKey).sort((a, b) => b[1] - a[1])[0]?.[0];
-
-    res.json({
-      success: true,
-      data: {
-        total:     songs.length,
-        by_source: bySource,
-        by_key:    byKey,
-        top_key:   topKey,
-      },
-    });
+    const topKey = Object.entries(byKey).sort((a,b) => b[1]-a[1])[0]?.[0];
+    res.json({ success: true, data: { total: songs.length, by_source: bySource, by_key: byKey, top_key: topKey } });
   } catch (e) { next(e); }
 }
