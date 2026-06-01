@@ -1,95 +1,132 @@
-import { createClient }         from "@/lib/supabase/server";
-import { redirect }              from "next/navigation";
-import { PageHeader }            from "@/components/layout/PageHeader";
-import { logoutAction, updateProfileAction } from "@/app/actions/auth.actions";
-import Link                      from "next/link";
-import type { Metadata }         from "next";
+import { createClient }   from "@/lib/supabase/server";
+import { redirect }        from "next/navigation";
+import { PageHeader }      from "@/components/layout/PageHeader";
+import { Card }            from "@/components/ui/Card";
+import { Badge }           from "@/components/ui/index";
+import { logoutAction }    from "@/app/actions/auth.actions";
+import { Button }          from "@/components/ui/Button";
+import { SubmitButton }    from "@/components/ui/Button";
+import { updateProfileAction } from "@/app/actions/auth.actions";
+import Link                from "next/link";
+import type { Metadata }   from "next";
 
 export const metadata: Metadata = { title: "Profile" };
 
-const PARTS = [
-  { v:"soprano", c:"#7F77DD", r:"C4–A5" },
-  { v:"alto",    c:"#2DA882", r:"G3–E5" },
-  { v:"tenor",   c:"#D4820A", r:"C3–A4" },
-  { v:"bass",    c:"#185FA5", r:"E2–E4" },
-];
+const VOICE_PARTS = ["soprano", "alto", "tenor", "bass"] as const;
+
+const PART_COLORS: Record<string, string> = {
+  soprano: "bg-voice-soprano border-soprano/40 text-soprano",
+  alto:    "bg-voice-alto border-alto/40 text-alto",
+  tenor:   "bg-voice-tenor border-tenor/40 text-tenor",
+  bass:    "bg-voice-bass border-bass/40 text-bass",
+};
 
 export default async function ProfilePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-  const { count } = await supabase.from("songs").select("id", { count:"exact", head:true }).eq("user_id", user.id);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
 
-  const vp = profile?.preferred_voice_part as string | undefined;
+  const { data: songCount } = await supabase
+    .from("songs")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  const total = (songCount as unknown as { count: number })?.count ?? 0;
 
   return (
     <div className="min-h-screen">
-      <PageHeader title="Profile" backHref="/home"/>
-      <div className="px-5 pb-10 space-y-4">
+      <PageHeader title="Profile" backHref="/" />
 
-        {/* Avatar card */}
-        <div className="rounded-3xl border border-white/8 bg-[#13131E] p-5 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
-               style={{ background:"#7F77DD25", border:"1px solid #7F77DD30", color:"#7F77DD" }}>
+      <div className="px-5 pb-10 space-y-5">
+
+        {/* Avatar + name */}
+        <Card variant="flat" padding="md" className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-soprano/20 border border-soprano/30
+                          flex items-center justify-center text-soprano text-xl font-bold shrink-0">
             {(profile?.full_name ?? user.email ?? "?")[0].toUpperCase()}
           </div>
           <div className="min-w-0">
-            <p className="text-base font-semibold text-white truncate">{profile?.full_name ?? "User"}</p>
-            <p className="text-sm text-white/30 truncate">{user.email}</p>
-            <p className="text-xs text-white/20 mt-1">{count ?? 0} songs analysed</p>
+            <p className="text-base font-semibold text-white truncate">
+              {profile?.full_name ?? "Unnamed"}
+            </p>
+            <p className="text-sm text-muted truncate">{user.email}</p>
+            <p className="text-xs text-muted mt-1">{total} songs analysed</p>
           </div>
-        </div>
+        </Card>
 
-        {/* Edit form */}
-        <form action={updateProfileAction} className="rounded-3xl border border-white/8 bg-[#13131E] p-5 space-y-4">
-          <p className="text-sm font-semibold text-white">Edit profile</p>
-          <div className="space-y-1.5">
-            <label className="text-xs text-white/40">Full name</label>
-            <input name="full_name" defaultValue={profile?.full_name ?? ""} placeholder="Your name"
-              className="w-full rounded-2xl border border-white/8 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-[#7F77DD]/50"/>
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs text-white/40">Voice part</label>
-            <div className="grid grid-cols-4 gap-2">
-              {PARTS.map(p => (
-                <label key={p.v} className="cursor-pointer">
-                  <input type="radio" name="preferred_voice_part" value={p.v} defaultChecked={vp===p.v} className="sr-only"/>
-                  <div className="rounded-xl border py-2.5 text-center text-xs font-semibold transition-all"
-                       style={vp===p.v ? { borderColor:p.c+"50", background:p.c+"15", color:p.c } : { borderColor:"rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.3)" }}>
-                    {p.v.charAt(0).toUpperCase()+p.v.slice(1)}
-                    <div className="text-[9px] mt-0.5" style={{opacity:0.5}}>{p.r}</div>
-                  </div>
-                </label>
-              ))}
+        {/* Edit profile form */}
+        <Card variant="flat" padding="md" className="space-y-4">
+          <p className="text-sm font-medium text-white">Edit profile</p>
+          <form action={async (f) => { await updateProfileAction(f); }} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs text-muted">Full name</label>
+              <input
+                name="full_name"
+                defaultValue={profile?.full_name ?? ""}
+                className="w-full rounded-xl border border-border bg-background-tertiary
+                           px-4 py-3 text-sm text-white placeholder:text-muted
+                           focus:outline-none focus:ring-2 focus:ring-soprano/40"
+                placeholder="Your name"
+              />
             </div>
-          </div>
-          <button type="submit" className="w-full py-3 rounded-2xl bg-[#7F77DD] text-white text-sm font-semibold hover:bg-[#6B63CC] transition-all">
-            Save changes
-          </button>
-        </form>
 
-        {/* Links */}
-        <div className="rounded-3xl border border-white/8 bg-[#13131E] p-5 space-y-1">
-          {[
-            { href:"/library", label:"My library" },
-            { href:"/history", label:"Full history" },
-            { href:"/coach",   label:"Voice coach" },
-          ].map(l => (
-            <Link key={l.href} href={l.href}
-              className="flex items-center justify-between py-3 text-sm text-white/40 hover:text-white transition-colors border-b border-white/5 last:border-0">
-              {l.label} <span className="text-white/20">→</span>
-            </Link>
-          ))}
-        </div>
+            <div className="space-y-2">
+              <label className="text-xs text-muted">Voice part</label>
+              <div className="grid grid-cols-4 gap-2">
+                {VOICE_PARTS.map((part) => (
+                  <label key={part} className="cursor-pointer">
+                    <input
+                      type="radio"
+                      name="preferred_voice_part"
+                      value={part}
+                      defaultChecked={profile?.preferred_voice_part === part}
+                      className="sr-only"
+                    />
+                    <div className={`rounded-xl border py-3 text-center text-xs font-medium transition-all
+                                    ${profile?.preferred_voice_part === part
+                                      ? `${PART_COLORS[part]} border`
+                                      : "border-border bg-background-tertiary text-muted"}`}>
+                      {part.charAt(0).toUpperCase() + part.slice(1)}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <SubmitButton variant="primary" fullWidth>Save changes</SubmitButton>
+          </form>
+        </Card>
+
+        {/* Quick links */}
+        <Card variant="flat" padding="md" className="space-y-2">
+          <p className="text-sm font-medium text-white mb-3">Quick links</p>
+          <Link href="/library" className="flex items-center justify-between py-2 text-sm text-muted hover:text-white transition-colors">
+            <span>My library</span>
+            <span className="text-xs">{total} songs →</span>
+          </Link>
+          <Link href="/history" className="flex items-center justify-between py-2 text-sm text-muted hover:text-white transition-colors">
+            <span>Full history</span>
+            <span className="text-xs">→</span>
+          </Link>
+          <Link href="/coach" className="flex items-center justify-between py-2 text-sm text-muted hover:text-white transition-colors">
+            <span>Voice coach</span>
+            <span className="text-xs">→</span>
+          </Link>
+        </Card>
 
         {/* Sign out */}
         <form action={logoutAction}>
-          <button type="submit" className="w-full py-3 rounded-2xl border border-red-500/20 bg-red-500/5 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition-all">
+          <Button type="submit" variant="danger" fullWidth>
             Sign out
-          </button>
+          </Button>
         </form>
+
       </div>
     </div>
   );
