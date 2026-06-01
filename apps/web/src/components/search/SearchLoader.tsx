@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Music } from "lucide-react";
 import { AnalysisProgress, ProgressBar } from "@/components/layout/AnalysisProgress";
-import { StaticWaveform } from "@/components/audio/WaveformVisualiser";
+import { WaveformVisualiser } from "@/components/audio/WaveformVisualiser";
 import type { ProgressStep } from "@/components/layout/AnalysisProgress";
 import type { SearchResult } from "@partora/types";
 
@@ -53,7 +53,7 @@ export function SearchLoader({ progress, step, song }: SearchLoaderProps) {
       <div className="flex justify-center py-2">
         <div className="flex items-end gap-1 h-10">
           {(["soprano","alto","tenor","bass"] as const).map((part) => (
-            <StaticWaveform key={part} voicePart={part} active barCount={5} />
+            <WaveformVisualiser key={part} voicePart={part} active />
           ))}
         </div>
       </div>
