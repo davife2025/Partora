@@ -13,11 +13,11 @@ export async function middleware(request: NextRequest) {
     {
       cookies: {
         getAll() { return request.cookies.getAll(); },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options?: object }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options as object)
           );
         },
       },
@@ -27,7 +27,6 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
 
-  // Redirect unauthenticated users away from protected routes
   const isPublic = PUBLIC_ROUTES.some((r) => path.startsWith(r));
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
@@ -36,7 +35,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages
   const isAuthPage = AUTH_ROUTES.some((r) => path.startsWith(r));
   if (user && isAuthPage) {
     const url = request.nextUrl.clone();
