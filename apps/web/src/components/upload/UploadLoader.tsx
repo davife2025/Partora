@@ -1,7 +1,7 @@
 "use client";
 
 import { AnalysisProgress, ProgressBar } from "@/components/layout/AnalysisProgress";
-import { StaticWaveform } from "@/components/audio/WaveformVisualiser";
+import { WaveformVisualiser} from "@/components/audio/WaveformVisualiser";
 import type { ProgressStep } from "@/components/layout/AnalysisProgress";
 
 interface UploadLoaderProps {
@@ -47,11 +47,11 @@ export function UploadLoader({ uploadPct, progress, step, status }: UploadLoader
     <div className="space-y-6 py-4">
       {/* Animated waveform */}
       <div className="flex justify-center py-4">
-        <div className="flex items-end gap-1 h-12">
-          {(["soprano","alto","tenor","bass"] as const).map((part) => (
-            <StaticWaveform key={part} voicePart={part} active barCount={6} />
-          ))}
-        </div>
+      <div className="flex items-end gap-1 h-12">
+  {(["soprano","alto","tenor","bass"] as const).map((part) => (
+    <WaveformVisualiser key={part} voicePart={part} active />
+  ))}
+</div>
       </div>
 
       {/* Current action */}

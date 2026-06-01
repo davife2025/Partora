@@ -40,3 +40,4 @@ export function WaveformVisualiser({ analyser, voicePart="soprano", active=false
 
   return <canvas ref={canvasRef} className={`w-full rounded-xl ${className}`} style={{height}} aria-hidden/>;
 }
+
